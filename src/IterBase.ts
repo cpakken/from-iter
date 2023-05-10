@@ -12,14 +12,17 @@ export type T_STOP = typeof C_STOP
 
 export type TCHAIN = T_FILTER | T_MAP | T_MAP_REDUCE | T_STOP
 
-export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: number) => boolean]
+export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: number) => any]
+
+export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
+
 export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
+
 export type T_MAP_REDUCE_CHAIN<T, K, A = any> = readonly [
   T_MAP_REDUCE,
   (acc: A, val: T, key: K, index: number) => A,
   A | undefined
 ]
-export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => boolean]
 
 export type IterChain<T = any, K = any> =
   | T_FILTER_CHAIN<T, K>
