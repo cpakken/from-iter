@@ -26,11 +26,13 @@ type CollecitonMapFns<T, K, V> = {
   value?: (val: T, key: number, index: number) => V
 }
 
+type PrevResultStore<T> = WeakMap<T_MAP_REDUCE_CHAIN<T>[1], any>
+
 //TODO make IterObject and IterList extends ITer { _iterate }
 
 //make this to abstract class with Key -> [array/map/iterators/iter, number] [object, string]
 //for of and for in
-export class Iter<T> {
+export class IterBase<T> {
   constructor(iterator: Iterable<T>)
   constructor(
     iterator: Iterable<any>,
@@ -41,58 +43,67 @@ export class Iter<T> {
   constructor(private _iterator: Iterable<any>, private _chains: IterChain[] = []) {}
 
   private _iterate(callback: (result: T, key: number, index: number) => void) {
-    const { _chains, _iterator } = this
     let key = 0
     let index = 0
 
-    //Store previous mapReduce results for fn
-    const mapReduceCache = new WeakMap<T_MAP_REDUCE_CHAIN<T>[1], any>()
+    //Store previous mapReduce results per reducer
+    const prevResultStore: PrevResultStore<T> = new WeakMap()
 
-    for (const item of _iterator) {
-      //TODO everything in this loop in its own function
-
-      let state = 1 // 1 = continue, 0 = skip, -1 = stop
-      let result = item
-
-      for (const [type, fn, init] of _chains) {
-        switch (type) {
-          case C_MAP:
-            result = fn(result, key, index)
-            break
-          case C_FILTER:
-            if (!fn(result, key, index)) state = 0
-            break
-          case C_MAP_REDUCE: {
-            const prev = mapReduceCache.has(fn)
-              ? mapReduceCache.get(fn)
-              : (mapReduceCache.set(fn, init), init)
-
-            result = fn(prev, result, key, index)
-
-            mapReduceCache.set(fn, result)
-            break
-          }
-          case C_STOP: {
-            state = fn(result, key, index) ? -1 : 1
-          }
-        }
-        if (state < 1) break
-      }
-
-      if (state > 0) callback(result, key, index++)
-      if (state === -1) break
+    for (const item of this._iterator) {
+      const state = this._pipeItem(callback, prevResultStore, item, key, index)
+      if (state > 0) index++
+      if (state < 0) break
       key++
     }
   }
 
+  private _pipeItem(
+    callback: (result: T, key: number, index: number) => void,
+    prevResultStore: PrevResultStore<T>,
+    item: T,
+    key: number,
+    index: number
+  ) {
+    let state = 1 // 1 = continue, 0 = skip, -1 = stop
+    let result = item
+
+    for (const [type, fn, init] of this._chains) {
+      switch (type) {
+        case C_MAP:
+          result = fn(result, key, index)
+          break
+        case C_FILTER:
+          if (!fn(result, key, index)) state = 0
+          break
+        case C_MAP_REDUCE: {
+          const prev = prevResultStore.has(fn)
+            ? prevResultStore.get(fn)
+            : (prevResultStore.set(fn, init), init)
+
+          result = fn(prev, result, key, index)
+
+          prevResultStore.set(fn, result)
+          break
+        }
+        case C_STOP: {
+          state = fn(result, key, index) ? -1 : 1
+        }
+      }
+      if (state < 1) return state
+    }
+
+    if (state > 0) callback(result, key, index)
+    return state
+  }
+
   private _chainIter(chain: IterChain) {
     // @ts-ignore
-    return new Iter(this._iterator, [...this._chains, chain]) as any
+    return new IterBase(this._iterator, [...this._chains, chain]) as any
   }
 
   // Chainable methods
 
-  map<R>(fn: T_MAP_CHAIN<T, R>[1]): Iter<R> {
+  map<R>(fn: T_MAP_CHAIN<T, R>[1]): IterBase<R> {
     return this._chainIter([C_MAP, fn])
   }
 
@@ -100,7 +111,7 @@ export class Iter<T> {
     return this._chainIter([C_FILTER, fn])
   }
 
-  mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, A>[1], initial?: A): Iter<A> {
+  mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, A>[1], initial?: A): IterBase<A> {
     return this._chainIter([C_MAP_REDUCE, fn, initial])
   }
 
@@ -170,17 +181,13 @@ export class Iter<T> {
   toGenerator<R>(mapFn: (val: T, key: number, index: number) => R): Generator<R>
   toGenerator<R>(mapFn?: (val: T, key: number, index: number) => R): Generator<any> {
     const gen = mapFn
-      ? function* (this: Iter<T>) {
+      ? function* (this: IterBase<T>) {
           yield* this._iterator
         }
-      : function* (this: Iter<T>) {
+      : function* (this: IterBase<T>) {
           yield* this._iterator
         }
 
     return gen.bind(this)()
   }
-}
-
-export function iter<T>(iterator: Iterable<T>): Iter<T> {
-  return new Iter(iterator)
 }

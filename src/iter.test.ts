@@ -1,5 +1,5 @@
 import { Mock } from 'vitest'
-import { iter } from './iter'
+import { fromIter } from './from-iter'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
 
@@ -14,7 +14,7 @@ describe('kitchen sink', () => {
 
   const mapResults = vi.fn((value: number, key: number, index: number) => ({ value, key, index }))
 
-  const a = iter(Array.from({ length: 20 }))
+  const a = fromIter(Array.from({ length: 20 }))
     .map(mapKeys)
     .mapReduce(addPrev, 0)
     .filter(filterEven)

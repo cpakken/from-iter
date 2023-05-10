@@ -1,11 +1,15 @@
 {
-  "name": "iter",
+  "name": "from-iter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/*"
+  ],
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -24,5 +28,15 @@
     "typescript": "^5.0.2",
     "vite": "^4.3.2",
     "vitest": "^0.31.0"
-  }
+  },
+  "keywords": [
+    "utils",
+    "fp",
+    "functional",
+    "typescript",
+    "iterable",
+    "iterators",
+    "collection"
+  ],
+  "author": "Chris Pakken"
 }
