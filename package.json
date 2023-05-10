@@ -1,0 +1,28 @@
+{
+  "name": "iter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest --globals",
+    "build": "tsup"
+  },
+  "devDependencies": {
+    "changeset": "^0.2.6",
+    "terser": "^5.17.3",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.2",
+    "vitest": "^0.31.0"
+  }
+}
