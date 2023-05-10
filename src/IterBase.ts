@@ -1,70 +1,73 @@
-import { IterList, IterObject, IterObjectKey } from '.'
+import {
+  C_FILTER,
+  C_MAP,
+  C_MAP_REDUCE,
+  C_STOP,
+  CollecitonMapFns,
+  IterChain,
+  IterCollection,
+  IterateCallback,
+  PipeState,
+  PrevResultStore,
+  T_FILTER_CHAIN,
+  T_MAP_CHAIN,
+  T_MAP_REDUCE_CHAIN,
+  T_STOP_CHAIN,
+} from './types'
 
-const C_FILTER = 0
-const C_MAP = 1
-const C_MAP_REDUCE = 2
-const C_STOP = 3
-
-export type T_FILTER = typeof C_FILTER
-export type T_MAP = typeof C_MAP
-export type T_MAP_REDUCE = typeof C_MAP_REDUCE
-export type T_STOP = typeof C_STOP
-
-export type TCHAIN = T_FILTER | T_MAP | T_MAP_REDUCE | T_STOP
-
-export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: number) => any]
-
-export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
-
-export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
-
-export type T_MAP_REDUCE_CHAIN<T, K, A = any> = readonly [
-  T_MAP_REDUCE,
-  (acc: A, val: T, key: K, index: number) => A,
-  A | undefined
-]
-
-export type IterChain<T = any, K = any> =
-  | T_FILTER_CHAIN<T, K>
-  | T_MAP_CHAIN<T, K>
-  | T_MAP_REDUCE_CHAIN<T, K>
-  | T_STOP_CHAIN<T, K>
-
-type CollecitonMapFns<T, K, K_, V> = {
-  key?: (val: T, key: K, index: number) => K_
-  value?: (val: T, key: K, index: number) => V
-}
-
-export type PrevResultStore<T, K> = WeakMap<T_MAP_REDUCE_CHAIN<T, K>[1], any>
-
-export type IterateCallback<T, KEY extends string | number> = (result: T, key: KEY, index: number) => void
-
-type PipeState =
-  | 1 // continue
-  | 0 // skip
-  | -1 // stop
-
-export abstract class IterBase<T, KEY extends string | number> {
-  constructor(iterator: Iterable<T>)
+export class IterBase<T, KEY extends string | number> {
+  constructor(iterators: IterCollection<T>[])
   constructor(
-    iterator: Iterable<any>,
+    iterator: IterCollection<any>,
     chains: [...IterChain[], T_MAP_CHAIN<any, KEY, T> | T_MAP_REDUCE_CHAIN<any, KEY, T>]
   )
-  constructor(iterator: Iterable<T>, chains: [...IterChain[], T_FILTER_CHAIN<T, KEY> | T_STOP_CHAIN<T, KEY>])
+  constructor(
+    iterators: IterCollection<T>[],
+    chains: [...IterChain[], T_FILTER_CHAIN<T, KEY> | T_STOP_CHAIN<T, KEY>]
+  )
 
-  constructor(protected _iterator: Iterable<any>, private _chains: IterChain[] = []) {}
+  constructor(private _iterators: IterCollection<T>[], private _chains: IterChain[] = []) {}
 
-  // protected abstract _iterate(callback: (result: T, key: KEY, index: number) => void): void
-  protected abstract _iterate(callback: IterateCallback<T, KEY>): void
+  private _iterate(callback: IterateCallback<T, KEY>) {
+    let index = 0
 
-  protected _pipeItem(
-    // callback: IterateCallback<T, KEY>,
+    const prevResultStore = createPrevResultStore<T, KEY>()
+
+    for (const iterator of this._iterators) {
+      if (isForOf(iterator)) {
+        let key = 0
+        for (const item of iterator) {
+          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            callback(result!, key as KEY, index)
+            index++
+          }
+          if (state < 0) break
+          key++
+        }
+      } else {
+        for (const key in iterator) {
+          const item = iterator[key]
+          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            callback(result!, key as KEY, index)
+            index++
+          }
+          if (state < 0) break
+        }
+      }
+    }
+  }
+
+  private _pipeItem(
     prevResultStore: PrevResultStore<T, KEY>,
     item: T,
     key: KEY,
     index: number
   ): [PipeState, T?] {
-    let state: PipeState = 1 // 1 = continue, 0 = skip, -1 = stop
+    // 1 = continue, 0 = skip, -1 = stop
+    let state: PipeState = 1
+
     let result = item
 
     for (const [type, fn, init] of this._chains) {
@@ -98,31 +101,16 @@ export abstract class IterBase<T, KEY extends string | number> {
 
   private _chainIter(chain: IterChain) {
     // @ts-ignore
-    return new this.constructor(this._iterator, [...this._chains, chain]) as any
+    return new this.constructor(this._iterators, [...this._chains, chain]) as any
   }
 
   // Chainable methods
 
-  map<R>(this: IterList<T>, fn: T_MAP_CHAIN<T, KEY, R>[1]): IterList<R>
-
-  map<This extends IterObject<T>, R>(
-    this: This,
-    fn: T_MAP_CHAIN<T, KEY, R>[1]
-  ): IterObject<R, IterObjectKey<This>>
-
-  map<R>(this: any, fn: T_MAP_CHAIN<T, KEY, R>[1]): any {
+  map<R>(fn: T_MAP_CHAIN<T, KEY, R>[1]): IterBase<R, KEY> {
     return this._chainIter([C_MAP, fn])
   }
 
-  mapReduce<A>(this: IterList<T>, fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): IterList<A>
-
-  mapReduce<This extends IterObject<T>, A>(
-    this: This,
-    fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1],
-    initial?: A
-  ): IterObject<A, IterObjectKey<This>>
-
-  mapReduce<A>(this: any, fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): any {
+  mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): IterBase<A, KEY> {
     return this._chainIter([C_MAP_REDUCE, fn, initial])
   }
 
@@ -194,5 +182,38 @@ export abstract class IterBase<T, KEY extends string | number> {
   }
 
   // toGenerator
-  // abstract toGenerator<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any>
+  *toGenerator<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
+    let index = 0
+
+    const prevResultStore = createPrevResultStore<T, KEY>()
+
+    for (const iterator of this._iterators) {
+      if (isForOf(iterator)) {
+        let key = 0
+        for (const item of iterator) {
+          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            index++
+          }
+          if (state < 0) break
+          key++
+        }
+      } else {
+        for (const key in iterator) {
+          const item = iterator[key]
+          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            index++
+          }
+          if (state < 0) break
+        }
+      }
+    }
+  }
 }
+
+const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
+
+const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]

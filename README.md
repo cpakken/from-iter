@@ -47,6 +47,9 @@ const iterList = fromIter(generator())
 const iterObj = fromIter({ foo: 'bar', baz: 'qux', hello: 'world' })
   .map((value, key, index) => key.concat(value))
 
+//Combinations
+const hybridIter = fromIter([1, 2, 3], [4, 5, 6], new Map(...), { foo: 'bar' })
+
 //Chain fn
 /**
  * @type Value - inferred from result of previous chain
@@ -77,7 +80,7 @@ const set = iter.toSet()
 const map = iter.toMap()
 const generator = iter.toGenerator()
 
-//Optional Map Function
+//Optional Mapper Functions
 const array = iter.toArray((value, key, index) => value * 2)
 const set = iter.toSet((value, key, index) => value * 2)
 const generator = iter.toGenerator((value, key, index) => value * 2)

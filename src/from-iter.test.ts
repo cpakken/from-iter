@@ -45,6 +45,30 @@ describe('IterObject', () => {
   })
 })
 
+describe('Combination', () => {
+  test('list', () => {
+    const a = [1, 2, 3]
+    const b = [4, 5, 6]
+
+    const list = fromIter(a, b).toArray()
+    expect(list).toEqual([1, 2, 3, 4, 5, 6])
+  })
+  test('object', () => {
+    const a = { foo: 'bar' }
+    const b = { baz: 'qux' }
+
+    const list = fromIter(a, b).toObject()
+    expect(list).toEqual({ foo: 'bar', baz: 'qux' })
+  })
+  test('hybrid', () => {
+    const a = [1, 2, 3]
+    const b = { foo: 'bar' }
+
+    const list = fromIter(a, b).toArray()
+    expect(list).toEqual([1, 2, 3, 'bar'])
+  })
+})
+
 describe('kitchen sink', () => {
   const mapKeys = vi.fn((_value, key: number) => key)
 
