@@ -6,9 +6,9 @@ yarn add from-iter
 npm install from-iter
 ```
 ### Size
-| Package   | Size     | GZipped |
-| --------- | -------- | ------- |
-| from-iter | 1.2 kB 😎 | 721 B 😲 |
+| Package   | Size      | GZipped |
+| --------- | --------- | ------- |
+| from-iter | 1.52 KB 😎 | 673 B 😲 |
 
 A Tiny Fully typed lazy iterable library for JavaScript / TypeScript
 

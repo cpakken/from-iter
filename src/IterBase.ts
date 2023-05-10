@@ -37,6 +37,13 @@ type CollecitonMapFns<T, K, K_, V> = {
 
 export type PrevResultStore<T, K> = WeakMap<T_MAP_REDUCE_CHAIN<T, K>[1], any>
 
+export type IterateCallback<T, KEY extends string | number> = (result: T, key: KEY, index: number) => void
+
+type PipeState =
+  | 1 // continue
+  | 0 // skip
+  | -1 // stop
+
 export abstract class IterBase<T, KEY extends string | number> {
   constructor(iterator: Iterable<T>)
   constructor(
@@ -47,16 +54,17 @@ export abstract class IterBase<T, KEY extends string | number> {
 
   constructor(protected _iterator: Iterable<any>, private _chains: IterChain[] = []) {}
 
-  protected abstract _iterate(callback: (result: T, key: KEY, index: number) => void): void
+  // protected abstract _iterate(callback: (result: T, key: KEY, index: number) => void): void
+  protected abstract _iterate(callback: IterateCallback<T, KEY>): void
 
   protected _pipeItem(
-    callback: (result: T, key: KEY, index: number) => void,
+    // callback: IterateCallback<T, KEY>,
     prevResultStore: PrevResultStore<T, KEY>,
     item: T,
     key: KEY,
     index: number
-  ) {
-    let state = 1 // 1 = continue, 0 = skip, -1 = stop
+  ): [PipeState, T?] {
+    let state: PipeState = 1 // 1 = continue, 0 = skip, -1 = stop
     let result = item
 
     for (const [type, fn, init] of this._chains) {
@@ -81,16 +89,14 @@ export abstract class IterBase<T, KEY extends string | number> {
           state = fn(result, key, index) ? -1 : 1
         }
       }
-      if (state < 1) return state
+      if (state < 1) return [state]
     }
 
-    if (state > 0) callback(result, key, index)
-    return state
+    if (state > 0) return [state, result]
+    return [state]
   }
 
   private _chainIter(chain: IterChain) {
-    // return new IterBase(this._iterator, [...this._chains, chain]) as any
-
     // @ts-ignore
     return new this.constructor(this._iterator, [...this._chains, chain]) as any
   }
@@ -137,7 +143,9 @@ export abstract class IterBase<T, KEY extends string | number> {
 
   reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A {
     let acc = initial
-    this._iterate((result, key, index) => (acc = fn(acc, result, key, index)))
+    this._iterate((result, key, index) => {
+      acc = fn(acc, result, key, index)
+    })
     return acc
   }
 
@@ -186,17 +194,5 @@ export abstract class IterBase<T, KEY extends string | number> {
   }
 
   // toGenerator
-  toGenerator(): Generator<T>
-  toGenerator<R>(mapFn: (val: T, key: KEY, index: number) => R): Generator<R>
-  toGenerator<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
-    const gen = mapFn
-      ? function* (this: IterBase<T, KEY>) {
-          yield* this._iterator
-        }
-      : function* (this: IterBase<T, KEY>) {
-          yield* this._iterator
-        }
-
-    return gen.bind(this)()
-  }
+  // abstract toGenerator<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any>
 }

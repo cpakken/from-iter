@@ -9,7 +9,7 @@ export default defineConfig({
   terserOptions: {
     mangle: {
       properties: {
-        // regex: /^_/, //leave off, better bundle size (surprisingly)
+        regex: /^_/,
       },
     },
   },
