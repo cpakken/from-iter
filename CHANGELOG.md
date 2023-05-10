@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.4
+
+### Patch Changes
+
+- implement combination iterators
+
 ## 0.0.3
 
 ### Patch Changes
