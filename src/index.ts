@@ -1,2 +1,2 @@
-export * from './IterBase'
+export type * from './IterBase'
 export * from './from-iter'

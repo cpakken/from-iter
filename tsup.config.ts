@@ -16,6 +16,6 @@ export default defineConfig({
 
   clean: true,
   treeshake: true,
+  dts: true,
   // sourcemap: true,
-  // dts: true,
 })
