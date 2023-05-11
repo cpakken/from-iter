@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.5
+
+### Patch Changes
+
+- rename .toGenerator() to .values()
+
 ## 0.0.4
 
 ### Patch Changes

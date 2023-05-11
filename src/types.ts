@@ -2,18 +2,24 @@ export const C_FILTER = 0
 export const C_MAP = 1
 export const C_MAP_REDUCE = 2
 export const C_STOP = 3
+export const C_BUFFER = 4 //forEach
 
 export type T_FILTER = typeof C_FILTER
 export type T_MAP = typeof C_MAP
 export type T_MAP_REDUCE = typeof C_MAP_REDUCE
 export type T_STOP = typeof C_STOP
+export type T_BUFFER = typeof C_BUFFER
 
-export type TCHAIN = T_FILTER | T_MAP | T_MAP_REDUCE | T_STOP
+export type TCHAIN = T_FILTER | T_MAP | T_MAP_REDUCE | T_STOP | T_BUFFER
 
+//Buffered
 export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: number) => any]
 
 export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
 
+export type T_BUFFER_CHAIN<T, K> = readonly [T_BUFFER, (val: T, key: K, index: number) => any]
+
+//Mapped
 export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
 
 export type T_MAP_REDUCE_CHAIN<T, K, A = any> = readonly [
@@ -22,11 +28,13 @@ export type T_MAP_REDUCE_CHAIN<T, K, A = any> = readonly [
   A | undefined
 ]
 
-export type IterChain<T = any, K = any> =
+export type CN<T = any, K = any, R = any> =
+  | T_MAP_CHAIN<T, K, R>
+  | T_MAP_REDUCE_CHAIN<T, K, R>
   | T_FILTER_CHAIN<T, K>
-  | T_MAP_CHAIN<T, K>
-  | T_MAP_REDUCE_CHAIN<T, K>
   | T_STOP_CHAIN<T, K>
+  | T_BUFFER_CHAIN<T, K>
+
 export type CollecitonMapFns<T, K, K_, V> = {
   key?: (val: T, key: K, index: number) => K_
   value?: (val: T, key: K, index: number) => V

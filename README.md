@@ -78,12 +78,12 @@ const array = iter.toArray()
 const object = iter.toObject()
 const set = iter.toSet()
 const map = iter.toMap()
-const generator = iter.toGenerator()
+const iterator = iter.values()
 
 //Optional Mapper Functions
 const array = iter.toArray((value, key, index) => value * 2)
 const set = iter.toSet((value, key, index) => value * 2)
-const generator = iter.toGenerator((value, key, index) => value * 2)
+const iterator = iter.values((value, key, index) => value * 2)
 
 const object = iter.toObject({
   key: (value, key, index) => key,

@@ -1,10 +1,10 @@
 import {
+  CN,
   C_FILTER,
   C_MAP,
   C_MAP_REDUCE,
   C_STOP,
   CollecitonMapFns,
-  IterChain,
   IterCollection,
   IterateCallback,
   PipeState,
@@ -19,14 +19,14 @@ export class IterBase<T, KEY extends string | number> {
   constructor(iterators: IterCollection<T>[])
   constructor(
     iterator: IterCollection<any>,
-    chains: [...IterChain[], T_MAP_CHAIN<any, KEY, T> | T_MAP_REDUCE_CHAIN<any, KEY, T>]
+    chains: [...CN[], T_MAP_CHAIN<any, KEY, T> | T_MAP_REDUCE_CHAIN<any, KEY, T>]
   )
   constructor(
     iterators: IterCollection<T>[],
-    chains: [...IterChain[], T_FILTER_CHAIN<T, KEY> | T_STOP_CHAIN<T, KEY>]
+    chains: [...CN[], T_FILTER_CHAIN<T, KEY> | T_STOP_CHAIN<T, KEY>]
   )
 
-  constructor(private _iterators: IterCollection<T>[], private _chains: IterChain[] = []) {}
+  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {}
 
   private _iterate(callback: IterateCallback<T, KEY>) {
     let index = 0
@@ -99,9 +99,9 @@ export class IterBase<T, KEY extends string | number> {
     return [state]
   }
 
-  private _chainIter(chain: IterChain) {
+  private _chainIter(...chains: CN[]) {
     // @ts-ignore
-    return new this.constructor(this._iterators, [...this._chains, chain]) as any
+    return new this.constructor(this._iterators, [...this._chains, ...chains]) as any
   }
 
   // Chainable methods
@@ -127,6 +127,38 @@ export class IterBase<T, KEY extends string | number> {
     return this
   }
 
+  pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
+  pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
+  pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>
+  pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): IterBase<D, KEY>
+  pipe<A, B, C, D, E>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>
+  ): IterBase<E, KEY>
+  pipe<A, B, C, D, E, F>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>
+  ): IterBase<F, KEY>
+  pipe<A, B, C, D, E, F, G>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>,
+    g: CN<F, KEY, G>
+  ): IterBase<G, KEY>
+  pipe(...chains: CN[]): this {
+    return this._chainIter(...chains)
+  }
+
   // Terminal methods
 
   reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A {
@@ -140,12 +172,12 @@ export class IterBase<T, KEY extends string | number> {
   private _toCollection(
     collection: any,
     setter: (collection: any, key: KEY, value: any) => void,
-    mappers?: CollecitonMapFns<any, KEY, any, any>
+    mapFn?: CollecitonMapFns<any, KEY, any, any>
   ) {
-    const iterateFn = mappers
+    const iterateFn = mapFn
       ? (val: any, key: KEY, index: number) => {
-          const mappedKey = mappers.key?.(val, key, index) ?? key
-          const mappedVal = mappers.value?.(val, key, index) ?? val
+          const mappedKey = mapFn.key?.(val, key, index) ?? key
+          const mappedVal = mapFn.value?.(val, key, index) ?? val
 
           setter(collection, mappedKey, mappedVal)
         }
@@ -181,8 +213,7 @@ export class IterBase<T, KEY extends string | number> {
     return this._toCollection(new Map(), (ma, key, value) => ma.set(key, value), mappers)
   }
 
-  // toGenerator
-  *toGenerator<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
+  *values<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
     let index = 0
 
     const prevResultStore = createPrevResultStore<T, KEY>()

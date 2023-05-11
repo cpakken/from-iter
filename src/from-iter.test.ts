@@ -16,10 +16,10 @@ describe('IterList', () => {
     expect(array).toMatchSnapshot()
   })
 
-  test('toGenerator', () => {
+  test('values()', () => {
     const list = fromIter(numbers)
 
-    const generator = list.toGenerator((x) => x * 2)
+    const generator = list.values((x) => x * 2)
 
     expect(Array.from(generator)).toEqual(numbers.map((x) => x * 2))
   })
@@ -38,8 +38,8 @@ describe('IterObject', () => {
     expect(result.toObject()).toEqual({ foo: 'foobar', baz: 'bazqux' })
   })
 
-  test('toGenerator', () => {
-    const generator = fromIter(object).toGenerator((value, key) => key.concat(value))
+  test('values()', () => {
+    const generator = fromIter(object).values((value, key) => key.concat(value))
 
     expect(Array.from(generator)).toEqual(['foobar', 'bazqux'])
   })
