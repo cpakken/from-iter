@@ -17,7 +17,13 @@ import {
 } from './types'
 
 export class IterBase<T, KEY extends string | number> {
-  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {}
+  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {
+    //Make instance callable?
+    // const pipe = this.pipe.bind(this)
+    // //@ts-ignore
+    // Object.setPrototypeOf(pipe, this.__proto__)
+    // return Object.assign(pipe, this)
+  }
 
   private _iterate(callback: IterateCallback<T, KEY>) {
     let index = 0
@@ -111,7 +117,7 @@ export class IterBase<T, KEY extends string | number> {
           break
         }
         case C_STOP: {
-          state = fn(result, key, index) ? -1 : 1
+          state = fn(result, key, index) ? 1 : -1
         }
       }
       if (state < 1) return [state]
@@ -132,6 +138,10 @@ export class IterBase<T, KEY extends string | number> {
     return this._chainIter([C_MAP, fn])
   }
 
+  forEach(fn: (val: T, key: KEY, index: number) => void): this {
+    return this._chainIter([C_MAP, (val: T, key: KEY, index: number) => (fn(val, key, index), val)])
+  }
+
   mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): IterBase<A, KEY> {
     return this._chainIter([C_MAP_REDUCE, fn, initial])
   }
@@ -140,13 +150,11 @@ export class IterBase<T, KEY extends string | number> {
     return this._chainIter([C_FILTER, fn])
   }
 
-  until(fn: T_STOP_CHAIN<T, KEY>[1]): this {
-    return this._chainIter([C_STOP, fn])
-  }
-
-  forEach(fn: (val: T, key: KEY, index: number) => void): this {
-    this._iterate(fn)
-    return this
+  take(fn: T_STOP_CHAIN<T, KEY>[1]): this
+  take(times: number): this
+  take(fn: number | T_STOP_CHAIN<T, KEY>[1]): this {
+    // @ts-ignore
+    return this._chainIter([C_STOP, isNaN(fn) ? fn : (val, key, index) => index < fn])
   }
 
   pipe(...chains: CN[]): this {
@@ -155,13 +163,18 @@ export class IterBase<T, KEY extends string | number> {
 
   // Terminal methods
 
-  reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A {
+  reduce<A>(fn: (acc: A | undefined, val: T, key: KEY, index: number) => A): A
+  reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A
+  reduce<A>(fn: (acc: A | undefined, val: T, key: KEY, index: number) => A, initial?: A): A | undefined {
     let acc = initial
     this._iterate((result, key, index) => {
       acc = fn(acc, result, key, index)
     })
     return acc
   }
+
+  //TODO .to() should use combination of pipe chain and reducer
+  //implement findKey() findIndex() find()
 
   /** Use with library reducer methods like
    * groupBy, countBy, last, chunk,

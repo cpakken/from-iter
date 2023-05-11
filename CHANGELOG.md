@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.8
+
+### Patch Changes
+
+- 3b4315a: Fix .forEach() and changed .util() to .take()
+
 ## 0.0.7
 
 ### Patch Changes

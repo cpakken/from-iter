@@ -17,7 +17,8 @@ export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: n
 
 export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
 
-export type T_BUFFER_CHAIN<T, K> = readonly [T_BUFFER, (val: T, key: K, index: number) => any]
+//just use map and return val: T
+// export type T_BUFFER_CHAIN<T, K> = readonly [T_BUFFER, (val: T, key: K, index: number) => any]
 
 //Mapped
 export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
@@ -33,7 +34,7 @@ export type CN<T = any, K = any, R = any> =
   | T_MAP_REDUCE_CHAIN<T, K, R>
   | T_FILTER_CHAIN<T, K>
   | T_STOP_CHAIN<T, K>
-  | T_BUFFER_CHAIN<T, K>
+// | T_BUFFER_CHAIN<T, K>
 
 export type CollecitonMapFns<T, K, K_, V> = {
   key?: (val: T, key: K, index: number) => K_

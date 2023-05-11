@@ -69,7 +69,7 @@ const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   .map((value, key, index) => value * 2)
   .filter((value, key, index) => value % 2 === 0)
   .mapReduce((prev, value, key, index) => prev + value, initialValue)
-  .until((value, key, index) => value > 10) 
+  .take((value, key, index) => value > 10) 
 //  .flatMap((value, key, index) => [value, value * 2]) TODO
 
 
@@ -103,8 +103,8 @@ const map = iter.toMap({
 // .to(<utilityReducer>())
 const grouped = iter.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
-
 ```
+Inspired by remeda, lodash, ramda, and other functional libraries.
 
 ## Roadmap
 - [ ] Async Iterators `fromIterAsync()` 

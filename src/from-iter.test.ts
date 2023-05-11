@@ -1,6 +1,5 @@
 import { Mock } from 'vitest'
 import { fromIter } from './from-iter'
-import { IterBase } from '.'
 import { groupBy } from './reducers'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
@@ -78,15 +77,22 @@ describe('kitchen sink', () => {
 
   const filterEven = vi.fn((value) => value % 2 === 0)
 
-  const stopAt = vi.fn((value: number) => value > 100)
+  const takeWhile = vi.fn((value: number) => value < 100)
 
   const mapResults = vi.fn((value: number, key: number, index: number) => ({ value, key, index }))
 
+  const forEach1 = vi.fn()
+  const forEach2 = vi.fn()
+  const forEach3 = vi.fn()
+
   const a = fromIter(Array.from({ length: 20 }))
     .map(mapKeys)
+    .forEach(forEach1)
     .mapReduce(addPrev, 0)
     .filter(filterEven)
-    .until(stopAt)
+    .forEach(forEach2)
+    .take(takeWhile)
+    .forEach(forEach3)
     .map(mapResults)
 
   beforeEach(() => {
@@ -100,6 +106,10 @@ describe('kitchen sink', () => {
     expect(getMockResults(mapKeys)).toEqual(Array.from({ length: 16 }).map((_, i) => i))
     expect(getMockResults(addPrev)).toMatchSnapshot()
     expect(getMockResults(filterEven)).toMatchSnapshot()
+
+    expect(forEach1).toBeCalledTimes(16)
+    expect(forEach2).toBeCalledTimes(8)
+    expect(forEach3).toBeCalledTimes(7)
   })
 
   test('reduce', () => {
