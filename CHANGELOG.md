@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.6
+
+### Patch Changes
+
+- Fix values() types
+
 ## 0.0.5
 
 ### Patch Changes

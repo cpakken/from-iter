@@ -16,44 +16,65 @@ import {
 } from './types'
 
 export class IterBase<T, KEY extends string | number> {
-  constructor(iterators: IterCollection<T>[])
-  constructor(
-    iterator: IterCollection<any>,
-    chains: [...CN[], T_MAP_CHAIN<any, KEY, T> | T_MAP_REDUCE_CHAIN<any, KEY, T>]
-  )
-  constructor(
-    iterators: IterCollection<T>[],
-    chains: [...CN[], T_FILTER_CHAIN<T, KEY> | T_STOP_CHAIN<T, KEY>]
-  )
-
   constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {}
 
   private _iterate(callback: IterateCallback<T, KEY>) {
     let index = 0
 
     const prevResultStore = createPrevResultStore<T, KEY>()
+    const pipeItem = this._pipeItem.bind(this)
 
     for (const iterator of this._iterators) {
       if (isForOf(iterator)) {
         let key = 0
         for (const item of iterator) {
-          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
           if (state > 0) {
             callback(result!, key as KEY, index)
             index++
-          }
-          if (state < 0) break
+          } else if (state < 0) break
           key++
         }
       } else {
         for (const key in iterator) {
           const item = iterator[key]
-          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
+          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
           if (state > 0) {
             callback(result!, key as KEY, index)
             index++
-          }
-          if (state < 0) break
+          } else if (state < 0) break
+        }
+      }
+    }
+  }
+
+  values(): Generator<T>
+  values<R>(mapFn: (val: T, key: KEY, index: number) => R): Generator<R>
+  *values<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
+    let index = 0
+
+    const prevResultStore = createPrevResultStore<T, KEY>()
+    const pipeItem = this._pipeItem.bind(this)
+
+    for (const iterator of this._iterators) {
+      if (isForOf(iterator)) {
+        let key = 0
+        for (const item of iterator) {
+          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            index++
+          } else if (state < 0) break
+          key++
+        }
+      } else {
+        for (const key in iterator) {
+          const item = iterator[key]
+          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
+          if (state > 0) {
+            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            index++
+          } else if (state < 0) break
         }
       }
     }
@@ -211,37 +232,6 @@ export class IterBase<T, KEY extends string | number> {
   toMap<K, V>(mappers: CollecitonMapFns<T, KEY, K, V>): Map<K, V>
   toMap<K, V>(mappers?: CollecitonMapFns<T, KEY, K, V>): Map<K, V> {
     return this._toCollection(new Map(), (ma, key, value) => ma.set(key, value), mappers)
-  }
-
-  *values<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
-    let index = 0
-
-    const prevResultStore = createPrevResultStore<T, KEY>()
-
-    for (const iterator of this._iterators) {
-      if (isForOf(iterator)) {
-        let key = 0
-        for (const item of iterator) {
-          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
-          if (state > 0) {
-            yield mapFn ? mapFn(result!, key as KEY, index) : result
-            index++
-          }
-          if (state < 0) break
-          key++
-        }
-      } else {
-        for (const key in iterator) {
-          const item = iterator[key]
-          const [state, result] = this._pipeItem(prevResultStore, item, key as KEY, index)
-          if (state > 0) {
-            yield mapFn ? mapFn(result!, key as KEY, index) : result
-            index++
-          }
-          if (state < 0) break
-        }
-      }
-    }
   }
 }
 
