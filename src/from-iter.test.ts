@@ -1,5 +1,7 @@
 import { Mock } from 'vitest'
 import { fromIter } from './from-iter'
+import { IterBase } from '.'
+import { groupBy } from './reducers'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
 
@@ -114,5 +116,16 @@ describe('kitchen sink', () => {
         "8": 36,
       }
     `)
+  })
+})
+
+test.only('callable process', () => {
+  const numIter = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).map((x) => x + 2)
+
+  const grouped = numIter(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+
+  expect(grouped).toEqual({
+    odd: [3, 5, 7, 9, 11],
+    even: [4, 6, 8, 10, 12],
   })
 })

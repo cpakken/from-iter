@@ -1,3 +1,4 @@
+import { Process } from './reducers'
 import {
   CN,
   C_FILTER,
@@ -16,7 +17,17 @@ import {
 } from './types'
 
 export class IterBase<T, KEY extends string | number> {
-  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {}
+  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {
+    //https://stackoverflow.com/questions/36871299/how-to-extend-function-with-es6-classes/74124360#74124360
+
+    //callable instance
+    const processor = <A>([initial, fn]: Process<T, KEY, A>): A => {
+      return this.reduce(fn, initial)
+    }
+
+    Object.setPrototypeOf(processor, Object.getPrototypeOf(this))
+    return Object.assign(processor, this)
+  }
 
   private _iterate(callback: IterateCallback<T, KEY>) {
     let index = 0
@@ -148,34 +159,6 @@ export class IterBase<T, KEY extends string | number> {
     return this
   }
 
-  pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
-  pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
-  pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>
-  pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): IterBase<D, KEY>
-  pipe<A, B, C, D, E>(
-    a: CN<T, KEY, A>,
-    b: CN<A, KEY, B>,
-    c: CN<B, KEY, C>,
-    d: CN<C, KEY, D>,
-    e: CN<D, KEY, E>
-  ): IterBase<E, KEY>
-  pipe<A, B, C, D, E, F>(
-    a: CN<T, KEY, A>,
-    b: CN<A, KEY, B>,
-    c: CN<B, KEY, C>,
-    d: CN<C, KEY, D>,
-    e: CN<D, KEY, E>,
-    f: CN<E, KEY, F>
-  ): IterBase<F, KEY>
-  pipe<A, B, C, D, E, F, G>(
-    a: CN<T, KEY, A>,
-    b: CN<A, KEY, B>,
-    c: CN<B, KEY, C>,
-    d: CN<C, KEY, D>,
-    e: CN<D, KEY, E>,
-    f: CN<E, KEY, F>,
-    g: CN<F, KEY, G>
-  ): IterBase<G, KEY>
   pipe(...chains: CN[]): this {
     return this._chainIter(...chains)
   }
@@ -238,3 +221,36 @@ export class IterBase<T, KEY extends string | number> {
 const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
 
 const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
+
+export interface IterBase<T, KEY extends string | number> {
+  <A>(process: Process<T, KEY, A>): A
+
+  pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
+  pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
+  pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>
+  pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): IterBase<D, KEY>
+  pipe<A, B, C, D, E>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>
+  ): IterBase<E, KEY>
+  pipe<A, B, C, D, E, F>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>
+  ): IterBase<F, KEY>
+  pipe<A, B, C, D, E, F, G>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>,
+    g: CN<F, KEY, G>
+  ): IterBase<G, KEY>
+}
