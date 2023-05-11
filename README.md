@@ -10,7 +10,12 @@ npm install from-iter
 | --------- | --------- | ------- |
 | from-iter | 1.52 KB 😎 | 673 B 😲 |
 
-A Tiny Fully typed lazy iterable library for JavaScript / TypeScript
+A Tiny Fully-Typed tree shakable lazy iterable library for JavaScript / TypeScript.
+Combine and iterate over any iterable object or array with a simple chainable API.
+
+Internally uses `for...of` for iterables and `for...in` for iterable objects to pipe values through a chain of functions.
+
+Unlike chaining arrays, this library does not create intermediate arrays for each operation, instead, it iterates over the values and passes them through the chain of functions.
 
 ## Quick Start
 
@@ -95,13 +100,11 @@ const map = iter.toMap({
   value: (value, key, index) => value * 2
 })
 
+// .to(<utilityReducer>())
+const grouped = iter.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+
 
 ```
-## Description
-Inspired by `remeda`  lodash / ramda / remeda 
-
-TODO
-
 
 ## Roadmap
 - [ ] Async Iterators `fromIterAsync()` 

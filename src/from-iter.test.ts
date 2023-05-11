@@ -119,13 +119,15 @@ describe('kitchen sink', () => {
   })
 })
 
-test.only('callable process', () => {
-  const numIter = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).map((x) => x + 2)
+describe('utility reducers', () => {
+  test('groupBy', () => {
+    const grouped = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+      .map((x) => x + 2)
+      .to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
-  const grouped = numIter(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
-
-  expect(grouped).toEqual({
-    odd: [3, 5, 7, 9, 11],
-    even: [4, 6, 8, 10, 12],
+    expect(grouped).toEqual({
+      odd: [3, 5, 7, 9, 11],
+      even: [4, 6, 8, 10, 12],
+    })
   })
 })

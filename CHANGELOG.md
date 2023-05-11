@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.7
+
+### Patch Changes
+
+- .to() utility reducers like groupBy
+
 ## 0.0.6
 
 ### Patch Changes

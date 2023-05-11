@@ -17,17 +17,7 @@ import {
 } from './types'
 
 export class IterBase<T, KEY extends string | number> {
-  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {
-    //https://stackoverflow.com/questions/36871299/how-to-extend-function-with-es6-classes/74124360#74124360
-
-    //callable instance
-    const processor = <A>([initial, fn]: Process<T, KEY, A>): A => {
-      return this.reduce(fn, initial)
-    }
-
-    Object.setPrototypeOf(processor, Object.getPrototypeOf(this))
-    return Object.assign(processor, this)
-  }
+  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {}
 
   private _iterate(callback: IterateCallback<T, KEY>) {
     let index = 0
@@ -173,6 +163,13 @@ export class IterBase<T, KEY extends string | number> {
     return acc
   }
 
+  /** Use with library reducer methods like
+   * groupBy, countBy, last, chunk,
+   */
+  to<A>([initial, fn]: Process<T, KEY, A>): A {
+    return this.reduce(fn, initial)
+  }
+
   private _toCollection(
     collection: any,
     setter: (collection: any, key: KEY, value: any) => void,
@@ -223,8 +220,6 @@ const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, 
 const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
 
 export interface IterBase<T, KEY extends string | number> {
-  <A>(process: Process<T, KEY, A>): A
-
   pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
   pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>

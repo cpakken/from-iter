@@ -1,8 +1,8 @@
 type Reducer<T, K, A> = (acc: A, val: T, key: K, index: number) => A
+export type Process<T, K, A> = [A, Reducer<T, K, A>]
+
 type MapFn<T, K, R> = (val: T, key: K, index: number) => R
 type Store<K extends string | number, V> = { [key in K]: V }
-
-export type Process<T, K, A> = [A, Reducer<T, K, A>]
 
 export const groupBy = <T, K extends string | number, R extends string | number>(
   fn: MapFn<T, K, R>
