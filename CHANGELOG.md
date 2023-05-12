@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.11
+
+### Patch Changes
+
+- iter() for lite version
+
 ## 0.0.10
 
 ### Patch Changes

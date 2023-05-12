@@ -1,6 +1,5 @@
 import { Mock } from 'vitest'
-import { fromIter } from './from-iter'
-import { find, groupBy } from './reducers'
+import { find, fromIter, groupBy } from '..'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
 
@@ -139,7 +138,7 @@ describe('utility reducers', () => {
   const numbers = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
   test('groupBy', () => {
-    const grouped = numbers.map((x) => x + 2).to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+    const grouped = numbers.map((x) => x + 2)(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
     expect(grouped).toEqual({
       odd: [3, 5, 7, 9, 11],
@@ -148,7 +147,7 @@ describe('utility reducers', () => {
   })
 
   test('find', () => {
-    const found = numbers.to(find((x) => x > 5))
+    const found = numbers(find((x) => x > 5))
     expect(found).toBe(6)
   })
 })

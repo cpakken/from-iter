@@ -1,4 +1,5 @@
 export type * from './types'
+export * from './IterLite'
 export * from './IterBase'
 export * from './IterBuffer'
 export * from './toCollection'

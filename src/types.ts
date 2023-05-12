@@ -35,11 +35,13 @@ export type CN<T = any, K = any, R = any> =
 export type MapKeyFn<T, K, K_> = (val: T, key: K, index: number) => K_
 
 export type Reducer<T, K, A> = (acc: A, val: T, key: K, index: number) => A
-export type ReducerUnit<T, K, A> = [A, Reducer<T, K, A>]
+
+export type ReducerUnit<T, K, A> = [reducer: Reducer<T, K, A>, create?: () => A]
 
 export type Processor<T, K, A, R = T> = [
-  readonly [CN<T, K>, ...CN[]] | null | undefined,
-  ReducerUnit<R, K, A>
+  reducerUnit: ReducerUnit<R, K, A>,
+  chains?: readonly [CN<T, K>, ...CN[]],
+  priorityChains?: readonly [CN<T, K>, ...CN[]]
 ]
 
 export type PrevResultStore<T, K> = WeakMap<T_MAP_REDUCE_CHAIN<T, K>[1], any>
@@ -57,3 +59,5 @@ export type ValueOfIter<T> = T extends IterCollection<infer V> ? V : never
 
 // export type ChildOf<T> = T extends (infer V)[] ? V : never
 export type ChildOf<T extends any[]> = T[number]
+
+export type ObjectKey = string | number | symbol

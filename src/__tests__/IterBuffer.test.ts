@@ -1,4 +1,4 @@
-import { fromIter } from '.'
+import { fromIter } from '..'
 
 describe('IterBuffer', () => {
   test('without buffer', () => {

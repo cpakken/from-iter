@@ -1,6 +1,6 @@
 {
   "name": "from-iter",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -18,10 +18,7 @@
   },
   "scripts": {
     "test": "vitest --globals",
-    "build": "tsup",
-    "c": "changeset",
-    "c:v": "changeset version",
-    "publish": "changeset publish"
+    "build": "tsup"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.1",

@@ -1,3 +1,10 @@
+# from-iter
+A Tiny Fully-Typed tree shakable lazy iterable library for JavaScript / TypeScript.
+Combine and iterate over any iterable object or array with a simple chainable API.
+
+Internally uses `for...of` for iterables and `for...in` for iterable objects to pipe values through a chain of functions.
+
+Unlike chaining arrays, this library does not create intermediate arrays for each operation, instead, it iterates over the values and passes them through the chain of functions.
 
 ## Install
 ```bash
@@ -6,16 +13,16 @@ yarn add from-iter
 npm install from-iter
 ```
 ### Size
-| Package   | Size      | GZipped |
-| --------- | --------- | ------- |
-| from-iter | 1.52 KB 😎 | 673 B 😲 |
+| Package           | Size    | GZipped |
+| ----------------- | ------- | ------- |
+| iter() (lite)     | 1.5 KB  | 765 B   |
+| fromIter() (full) | 2.15 KB | 1 B     |
 
-A Tiny Fully-Typed tree shakable lazy iterable library for JavaScript / TypeScript.
-Combine and iterate over any iterable object or array with a simple chainable API.
+Customize your treeshaking @ bundlejs.com 
+- https://bundlejs.com/?q=from-iter&bundle
 
-Internally uses `for...of` for iterables and `for...in` for iterable objects to pipe values through a chain of functions.
+---
 
-Unlike chaining arrays, this library does not create intermediate arrays for each operation, instead, it iterates over the values and passes them through the chain of functions.
 
 ## Quick Start
 
@@ -66,12 +73,20 @@ const chainFn = (value: Value, key: Key, index: Index) => Result
 
 //Chain operations (lazy evaluation - not executed until terminal operation is called)
 const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-  .map((value, key, index) => value * 2)
+  // [2, 4, 6, 8, 10]
   .filter((value, key, index) => value % 2 === 0)
-  .spy((value, key, index) => console.log(value, key, index)) //like forEach() but within the chain
-  .mapReduce((prev, value, key, index) => prev + value, initialValue)
-  .take((value, key, index) => value > 10) 
+  // [4, 8, 12, 16, 20]
+  .map((value, key, index) => value * 2)
+  // logs {value: 4, key: 1, index: 0}, {value: 8, key: 3, index: 1}, {value: 12, key: 5, index: 2}, {value: 16, key: 7, index: 3}, {value: 20, key: 9, index: 4
+  .spy((value, key, index) => console.log({value, key, index})) //like forEach() but within the chain
+  // [4, 12, 24, 40, 60]
+  .mapReduce((prev, value, key, index) => prev + value, 0 /* initialValue */)
 //  .flatMap((value, key, index) => [value, value * 2]) TODO
+  
+
+//If .take() is included in chain,  will stop iterating once the condition is met
+const iterListWillEarlyTerminate = iterList.take((value, key, index) => value < 30)
+
 
 
 //** Terminal operations **//
@@ -79,6 +94,11 @@ const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 iterList.forEach((value, key, index) => console.log(value, key, index))
 
 const reduced = iterList.reduce((acc, value, key, index) => acc + value, 0)
+
+// Call Chain-Reducer Utilities (directly callable)
+const grouped = iterList(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+
+const found = iterList(find((x) => x === 5))
 
 //to Collection
 
@@ -92,8 +112,6 @@ const iterator = iterList.values()
 const object = iterList.toObject((value, key, index) => key + '!')
 const map = iterList.toMap((value, key, index) => key + '!')
 
-// .to(<utilityReducer>())
-const grouped = iterList.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
 
 // Buffering
@@ -110,10 +128,57 @@ const reduced = buffered.reduce((acc, x) => acc + x, 0)
 
 
 ```
+## IterLite
+
+Implemented 
+DOCS INCOMPLETE TODO 
+
+LITE: 1.5KB (765B gzipped)
+  pipe - import chain methods manually 
+
+  - buffer
+  - reduce
+  - values()
+
+FULL: (all lite methods) 2.15kB (1 KB gzipped)
+  - chainable methods 
+    - map() 
+    - spy() 
+    - mapReduce() 
+    - filter() 
+    - take() 
+  - Terminal methods
+    - forEach() 
+    - toArray() 
+    - toSet() 
+    - toMap(mapKey?) 
+    - toObject(mapKey?)
+
+
+```ts
+const { iter, map, filter, toArray, fromIter } from 'from-iter'
+//Only import functions you need to reduce bundle size
+
+const list = iter([1, 2, 3, 4, 5]) //lite
+  .pipe(
+    map((x) => x * 2),
+    filter((x) => x % 2 === 0)
+  )(toArray())
+
+const listFull = fromIter([1, 2, 3, 4, 5]) //full
+  .map((x) => x * 2)
+  .filter((x) => x % 2 === 0)
+  .toArray()
+
+```
+
+
+
 Inspired by remeda, lodash, ramda, and other functional libraries.
 
 ## Roadmap
 - [x] .buffer()
+- [ ] common use cases examples (combine objects)
 - [ ] Async Iterators `fromIterAsync()` 
 - [ ] `createPipe` / `fromIter(iterator).pipe(...)`
 - [ ] flatMap -> use `fromIter()` for child iterator items

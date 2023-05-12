@@ -1,35 +1,43 @@
-import { MapKeyFn, Processor, Store } from '.'
+import { MapKeyFn, ObjectKey, Processor, Store } from '.'
 
 export const toCollection = <T, K, A>(
-  collection: A,
+  create: () => A,
   setter: (collection: A, value: T, key: K, index: number) => void
-): Processor<T, K, A> => {
-  return [
-    null,
-    [
-      collection,
-      (collection: A, val: T, key: K, index: number) => (setter(collection, val, key, index), collection),
-    ],
-  ]
-}
+): Processor<T, K, A> => [
+  [
+    (collection: A, val: T, key: K, index: number) => (setter(collection, val, key, index), collection),
+    create,
+  ],
+]
 
-export const toArray = <T, K>(): Processor<T, K, T[]> => {
-  return toCollection([] as any[], (collection, val) => collection.push(val))
-}
+//List Collections
 
-export const toSet = <T, K>(): Processor<T, K, Set<T>> => {
-  return toCollection(new Set(), (collection, val) => collection.add(val))
-}
+const toArray_ = toCollection(
+  (): any[] => [],
+  (collection, val) => collection.push(val)
+)
 
-export const toObject = <T, K, K_ extends string | number | symbol>(
+export const toArray = <T, K>(): Processor<T, K, T[]> => toArray_
+
+const toSet_ = toCollection(
+  (): Set<any> => new Set(),
+  (collection, val) => collection.add(val)
+)
+
+export const toSet = <T, K>(): Processor<T, K, Set<T>> => toSet_
+
+// Keyed Collections
+
+export const toObject = <T, K, K_ extends ObjectKey>(
   key?: MapKeyFn<T, K, K_>
-): Processor<T, K, Store<any, T>> => {
+): Processor<T, K, Store<ObjectKey, T>> => {
   const setter = key
-    ? (collection: Store<K_, any>, val: T, k: K, i: number) => (collection[key(val, k, i)] = val)
-    : // @ts-ignore ONLY ADD if k is string | number | symbol?
-      (collection: Store<K & string, any>, val: T, k: K) => (collection[k] = val)
+    ? (collection: Store<K_, T>, val: T, k: K, i: number) => (collection[key(val, k, i)] = val)
+    : // @ts-ignore ONLY ADD if k is ObjectKey?
+      (collection: Store<K, T>, val: T, k: K) => (collection[k] = val)
 
-  return toCollection({} as Store<any, any>, setter)
+  // @ts-ignore
+  return toCollection(() => ({} as Store<K, T>), setter)
 }
 
 export const toMap = <T, K, K_>(key?: MapKeyFn<T, K, K_>): Processor<T, K, Map<any, T>> => {
@@ -37,5 +45,5 @@ export const toMap = <T, K, K_>(key?: MapKeyFn<T, K, K_>): Processor<T, K, Map<a
     ? (collection: Map<K_, any>, val: T, k: K, i: number) => collection.set(key(val, k, i), val)
     : (collection: Map<K, any>, val: T, k: K) => collection.set(k, val)
 
-  return toCollection(new Map<any, any>(), setter as any)
+  return toCollection(() => new Map<any, any>(), setter as any)
 }
