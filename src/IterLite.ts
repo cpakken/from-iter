@@ -39,6 +39,7 @@ export class IterLite<T, KEY> {
         let key = 0
         for (const item of iterator) {
           const [state, result] = runChain(prevResultStore, item, key as KEY, index)
+          //TODO if state is flatmap state, yield from flatmap iterator
           if (state > 0) {
             yield [result!, key as KEY, index]
             index++
@@ -88,6 +89,7 @@ export class IterLite<T, KEY> {
         case C_STOP: {
           state = fn(result, key, index) ? 1 : -1
         }
+        //TODO case if C_FLATMAP - return iterator with special state flag
       }
       if (state < 1) return [state]
     }
@@ -138,7 +140,7 @@ export class IterLite<T, KEY> {
 export interface IterLite<T, KEY> {
   <A>(processor: Processor<T, KEY, A>): A
 
-  pipe<T, A>(a: CN<T, KEY, A>): IterLite<A, KEY>
+  pipe<A>(a: CN<T, KEY, A>): IterLite<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterLite<B, KEY>
   pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterLite<C, KEY>
   pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): IterLite<D, KEY>
@@ -166,4 +168,14 @@ export interface IterLite<T, KEY> {
     f: CN<E, KEY, F>,
     g: CN<F, KEY, G>
   ): IterLite<G, KEY>
+  pipe<A, B, C, D, E, F, G, H>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>,
+    g: CN<F, KEY, G>,
+    h: CN<G, KEY, H>
+  ): IterLite<H, KEY>
 }

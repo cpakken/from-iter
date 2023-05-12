@@ -73,7 +73,7 @@ export const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
 export interface Iter<T, KEY> {
   <A>(processor: Processor<T, KEY, A>): A
 
-  pipe<T, A>(a: CN<T, KEY, A>): Iter<A, KEY>
+  pipe<A>(a: CN<T, KEY, A>): Iter<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): Iter<B, KEY>
   pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): Iter<C, KEY>
   pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): Iter<D, KEY>
@@ -101,4 +101,14 @@ export interface Iter<T, KEY> {
     f: CN<E, KEY, F>,
     g: CN<F, KEY, G>
   ): Iter<G, KEY>
+  pipe<A, B, C, D, E, F, G, H>(
+    a: CN<T, KEY, A>,
+    b: CN<A, KEY, B>,
+    c: CN<B, KEY, C>,
+    d: CN<C, KEY, D>,
+    e: CN<D, KEY, E>,
+    f: CN<E, KEY, F>,
+    g: CN<F, KEY, G>,
+    h: CN<G, KEY, H>
+  ): Iter<H, KEY>
 }

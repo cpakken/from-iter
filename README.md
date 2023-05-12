@@ -131,10 +131,8 @@ const reduced = buffered.reduce((acc, x) => acc + x, 0)
 ```
 ## IterLite
 LITE: 1.5KB (765B gzipped)
-  pipe - import chain methods manually 
-
-  - buffer
-  - reduce
+  - pipe - import chain methods manually 
+  - reduce()
   - values()
 
 FULL: (all lite methods) 2.15kB (1 KB gzipped)
@@ -169,15 +167,34 @@ const listFull = fromIter([1, 2, 3, 4, 5]) //full
 
 ```
 
+### createPipe()
+```ts
+import { map, filter, iter, toArray, createPipe } from '..'
+
+const pipe = createPipe(
+  filter((x: number) => x % 2 === 0), //make sure you type the arguments of the first chain
+  map((x) => x * 2)
+)
+
+const numbers = iter([1, 2, 3, 4, 5, 6, 7, 8, 9])
+const result = pipe(numbers)(toArray())
+//result: [4, 8, 12, 16]
+
+const numbers2 = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9])
+const result2 = pipe(numbers2).tArray()
+
+
+```
+
 
 
 Inspired by remeda, lodash, ramda, and other functional libraries.
 
 ## Roadmap
 - [x] .buffer()
+- [x] `createPipe`
 - [ ] common use cases examples (combine objects)
 - [ ] Async Iterators `fromIterAsync()` 
-- [ ] `createPipe` / `fromIter(iterator).pipe(...)`
 - [ ] flatMap -> use `fromIter()` for child iterator items
 - [ ] Benchmarks
 - [ ] More tests
