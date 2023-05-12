@@ -85,20 +85,9 @@ const set = iter.toSet()
 const map = iter.toMap()
 const iterator = iter.values()
 
-//Optional Mapper Functions
-const array = iter.toArray((value, key, index) => value * 2)
-const set = iter.toSet((value, key, index) => value * 2)
-const iterator = iter.values((value, key, index) => value * 2)
-
-const object = iter.toObject({
-  key: (value, key, index) => key,
-  value: (value, key, index) => value * 2
-})
-
-const map = iter.toMap({
-  key: (value, key, index) => key,
-  value: (value, key, index) => value * 2
-})
+//Keyed Collection has an optional key mapper
+const object = iter.toObject((value, key, index) => key + '!')
+const map = iter.toMap((value, key, index) => key + '!')
 
 // .to(<utilityReducer>())
 const grouped = iter.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))

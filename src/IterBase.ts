@@ -1,28 +1,29 @@
-import { Process } from './reducers'
+import { filter, forEach, map, mapReduce, take, toArray, toMap, toObject, toSet } from '.'
 import {
   CN,
   C_FILTER,
   C_MAP,
   C_MAP_REDUCE,
   C_STOP,
-  CollecitonMapFns,
   IterCollection,
   IterateCallback,
+  MapKeyFn,
   PipeState,
   PrevResultStore,
+  Processor,
   T_FILTER_CHAIN,
   T_MAP_CHAIN,
   T_MAP_REDUCE_CHAIN,
   T_STOP_CHAIN,
 } from './types'
 
-export class IterBase<T, KEY extends string | number> {
+export class IterBase<T, KEY> {
   constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {
     //Make instance callable?
-    // const pipe = this.pipe.bind(this)
+    // const to = this.to.bind(this)
     // //@ts-ignore
-    // Object.setPrototypeOf(pipe, this.__proto__)
-    // return Object.assign(pipe, this)
+    // Object.setPrototypeOf(to, this.__proto__)
+    // return Object.assign(to, this)
   }
 
   private _iterate(callback: IterateCallback<T, KEY>) {
@@ -55,9 +56,7 @@ export class IterBase<T, KEY extends string | number> {
     }
   }
 
-  values(): Generator<T>
-  values<R>(mapFn: (val: T, key: KEY, index: number) => R): Generator<R>
-  *values<R>(mapFn?: (val: T, key: KEY, index: number) => R): Generator<any> {
+  *values(): Generator<T> {
     let index = 0
 
     const prevResultStore = createPrevResultStore<T, KEY>()
@@ -69,7 +68,7 @@ export class IterBase<T, KEY extends string | number> {
         for (const item of iterator) {
           const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
           if (state > 0) {
-            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            yield result!
             index++
           } else if (state < 0) break
           key++
@@ -79,7 +78,7 @@ export class IterBase<T, KEY extends string | number> {
           const item = iterator[key]
           const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
           if (state > 0) {
-            yield mapFn ? mapFn(result!, key as KEY, index) : result
+            yield result!
             index++
           } else if (state < 0) break
         }
@@ -127,7 +126,7 @@ export class IterBase<T, KEY extends string | number> {
     return [state]
   }
 
-  private _chainIter(...chains: CN[]) {
+  private _chain(...chains: CN[]) {
     // @ts-ignore
     return new this.constructor(this._iterators, [...this._chains, ...chains]) as any
   }
@@ -135,30 +134,27 @@ export class IterBase<T, KEY extends string | number> {
   // Chainable methods
 
   map<R>(fn: T_MAP_CHAIN<T, KEY, R>[1]): IterBase<R, KEY> {
-    return this._chainIter([C_MAP, fn])
+    return this._chain(map(fn))
   }
 
   forEach(fn: (val: T, key: KEY, index: number) => void): this {
-    return this._chainIter([C_MAP, (val: T, key: KEY, index: number) => (fn(val, key, index), val)])
+    return this._chain(forEach(fn))
   }
 
   mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): IterBase<A, KEY> {
-    return this._chainIter([C_MAP_REDUCE, fn, initial])
+    return this._chain(mapReduce(fn, initial))
   }
 
   filter(fn: T_FILTER_CHAIN<T, KEY>[1]): this {
-    return this._chainIter([C_FILTER, fn])
+    return this._chain(filter(fn))
   }
 
-  take(fn: T_STOP_CHAIN<T, KEY>[1]): this
-  take(times: number): this
-  take(fn: number | T_STOP_CHAIN<T, KEY>[1]): this {
-    // @ts-ignore
-    return this._chainIter([C_STOP, isNaN(fn) ? fn : (val, key, index) => index < fn])
+  take(fnOrNum: number | T_STOP_CHAIN<T, KEY>[1]): this {
+    return this._chain(take(fnOrNum))
   }
 
-  pipe(...chains: CN[]): this {
-    return this._chainIter(...chains)
+  pipe(...chains: CN[]): any {
+    return this._chain(...chains)
   }
 
   // Terminal methods
@@ -173,58 +169,36 @@ export class IterBase<T, KEY extends string | number> {
     return acc
   }
 
-  //TODO .to() should use combination of pipe chain and reducer
-  //implement findKey() findIndex() find()
-
+  // use combination of pipe chain and reducer
+  //implement findKey() findIndex() find(), pick()
   /** Use with library reducer methods like
    * groupBy, countBy, last, chunk,
    */
-  to<A>([initial, fn]: Process<T, KEY, A>): A {
-    return this.reduce(fn, initial)
+  // to<A>([chains, [initial, fn]]: [CN[] | null, Processor<T, KEY, A>]): A {
+  to<A>([chains, [initial, fn]]: Processor<T, KEY, A>): A {
+    return (chains ? this._chain(...chains) : this).reduce(fn, initial)
   }
 
-  private _toCollection(
-    collection: any,
-    setter: (collection: any, key: KEY, value: any) => void,
-    mapFn?: CollecitonMapFns<any, KEY, any, any>
-  ) {
-    const iterateFn = mapFn
-      ? (val: any, key: KEY, index: number) => {
-          const mappedKey = mapFn.key?.(val, key, index) ?? key
-          const mappedVal = mapFn.value?.(val, key, index) ?? val
-
-          setter(collection, mappedKey, mappedVal)
-        }
-      : (val: any, key: KEY) => setter(collection, key, val)
-
-    this._iterate(iterateFn)
-    return collection
+  toArray(): Array<T> {
+    return this.to(toArray())
   }
 
-  toArray(): Array<T>
-  toArray<R>(mapFn: (val: T, key: KEY, index: number) => R): Array<R>
-  toArray(mapFn?: (val: T, key: KEY, index: number) => any): Array<any> {
-    return this._toCollection([], (arr, _, value) => arr.push(value), mapFn && { value: mapFn })
+  toSet(): Set<T> {
+    return this.to(toSet())
   }
 
-  // toSet
-  toSet(): Set<T>
-  toSet<V>(mapFn: (val: T, key: KEY, index: number) => V): Set<V>
-  toSet<V>(mapFn?: (val: T, key: KEY, index: number) => V): Set<V> {
-    return this._toCollection(new Set(), (set, value) => set.add(value), mapFn && { value: mapFn })
+  toObject(): { [key in KEY & (string | number | symbol)]: T }
+  toObject<K extends string | number | symbol>(
+    key?: MapKeyFn<T, KEY, K>
+  ): { [key in K & (string | number | symbol)]: T }
+  toObject<K extends string>(keyMapFn?: MapKeyFn<T, KEY, K>) {
+    return this.to(toObject(keyMapFn))
   }
 
-  toObject(): { [key: string]: T }
-  toObject<K extends string, V>(mappers: CollecitonMapFns<T, KEY, K, V>): { [key in K]: V }
-  toObject<K extends string, V>(mappers?: CollecitonMapFns<T, KEY, K, V>): { [key: string]: any } {
-    return this._toCollection({}, (obj, key, value) => (obj[key] = value), mappers)
-  }
-
-  // toMap
-  toMap(): Map<number, T>
-  toMap<K, V>(mappers: CollecitonMapFns<T, KEY, K, V>): Map<K, V>
-  toMap<K, V>(mappers?: CollecitonMapFns<T, KEY, K, V>): Map<K, V> {
-    return this._toCollection(new Map(), (ma, key, value) => ma.set(key, value), mappers)
+  toMap(): Map<KEY, T>
+  toMap<K>(keyMapFn: MapKeyFn<T, KEY, K>): Map<K, T>
+  toMap<K>(keyMapFn?: MapKeyFn<T, KEY, K>) {
+    return this.to(toMap(keyMapFn))
   }
 }
 
@@ -232,7 +206,7 @@ const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, 
 
 const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
 
-export interface IterBase<T, KEY extends string | number> {
+export interface IterBase<T, KEY> {
   pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
   pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>

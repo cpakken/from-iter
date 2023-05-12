@@ -1,6 +1,6 @@
 import { Mock } from 'vitest'
 import { fromIter } from './from-iter'
-import { groupBy } from './reducers'
+import { find, groupBy } from './reducers'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
 
@@ -20,7 +20,7 @@ describe('IterList', () => {
   test('values()', () => {
     const list = fromIter(numbers)
 
-    const generator = list.values((x) => x * 2)
+    const generator = list.map((x) => x * 2).values()
 
     expect(Array.from(generator)).toEqual(numbers.map((x) => x * 2))
   })
@@ -34,13 +34,19 @@ describe('IterObject', () => {
 
     const result = list.map((value, key) => key.concat(value))
 
-    expect(result.toArray()).toEqual(['foobar', 'bazqux'])
+    const resArray = result.toArray()
+    expect(resArray).toEqual(['foobar', 'bazqux'])
 
-    expect(result.toObject()).toEqual({ foo: 'foobar', baz: 'bazqux' })
+    const resObj = result.toObject()
+    expect(resObj).toEqual({ foo: 'foobar', baz: 'bazqux' })
+
+    // const resObjMapped = result.toObject(() => 3)
   })
 
   test('values()', () => {
-    const generator = fromIter(object).values((value, key) => key.concat(value))
+    const generator = fromIter(object)
+      .map((value, key) => key.concat(value))
+      .values()
 
     expect(Array.from(generator)).toEqual(['foobar', 'bazqux'])
   })
@@ -130,14 +136,77 @@ describe('kitchen sink', () => {
 })
 
 describe('utility reducers', () => {
+  const numbers = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
   test('groupBy', () => {
-    const grouped = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-      .map((x) => x + 2)
-      .to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+    const grouped = numbers.map((x) => x + 2).to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
     expect(grouped).toEqual({
       odd: [3, 5, 7, 9, 11],
       even: [4, 6, 8, 10, 12],
     })
+  })
+
+  test('find', () => {
+    const found = numbers.to(find((x) => x > 5))
+    expect(found).toBe(6)
+  })
+})
+
+describe('toCollection', () => {
+  const numbers = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).filter((x) => x % 2 === 0)
+
+  test('array', () => {
+    const store = numbers.toArray()
+    expect(store).toMatchInlineSnapshot(`
+      [
+        2,
+        4,
+        6,
+        8,
+        10,
+      ]
+    `)
+  })
+
+  test('set', () => {
+    const store = numbers.toSet()
+    expect(store).toMatchInlineSnapshot(`
+      Set {
+        2,
+        4,
+        6,
+        8,
+        10,
+      }
+    `)
+  })
+
+  test('object', () => {
+    const store = numbers.toObject()
+    expect(store).toMatchInlineSnapshot(`
+      {
+        "1": 2,
+        "3": 4,
+        "5": 6,
+        "7": 8,
+        "9": 10,
+      }
+    `)
+  })
+
+  test('map', () => {
+    const store = numbers.toMap()
+    expect(store).toMatchInlineSnapshot(`
+      Map {
+        1 => 2,
+        3 => 4,
+        5 => 6,
+        7 => 8,
+        9 => 10,
+      }
+    `)
+
+    const store2 = numbers.toMap((x) => x + '!')
   })
 })

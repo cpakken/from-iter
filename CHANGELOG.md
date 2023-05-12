@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.9
+
+### Patch Changes
+
+- Improve types and simplify api
+
 ## 0.0.8
 
 ### Patch Changes

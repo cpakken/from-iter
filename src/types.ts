@@ -17,9 +17,6 @@ export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: n
 
 export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
 
-//just use map and return val: T
-// export type T_BUFFER_CHAIN<T, K> = readonly [T_BUFFER, (val: T, key: K, index: number) => any]
-
 //Mapped
 export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
 
@@ -34,23 +31,29 @@ export type CN<T = any, K = any, R = any> =
   | T_MAP_REDUCE_CHAIN<T, K, R>
   | T_FILTER_CHAIN<T, K>
   | T_STOP_CHAIN<T, K>
-// | T_BUFFER_CHAIN<T, K>
 
-export type CollecitonMapFns<T, K, K_, V> = {
-  key?: (val: T, key: K, index: number) => K_
-  value?: (val: T, key: K, index: number) => V
-}
+export type MapKeyFn<T, K, K_> = (val: T, key: K, index: number) => K_
+
+export type Reducer<T, K, A> = (acc: A, val: T, key: K, index: number) => A
+export type ReducerUnit<T, K, A> = [A, Reducer<T, K, A>]
+
+export type Processor<T, K, A, R = T> = [
+  readonly [CN<T, K>, ...CN[]] | null | undefined,
+  ReducerUnit<R, K, A>
+]
 
 export type PrevResultStore<T, K> = WeakMap<T_MAP_REDUCE_CHAIN<T, K>[1], any>
 
-export type IterateCallback<T, KEY extends string | number> = (result: T, key: KEY, index: number) => void
+export type IterateCallback<T, KEY> = (result: T, key: KEY, index: number) => void
 export type PipeState =
   | 1 // continue
   | 0 // skip
   | -1 // stop
 
+//Utility types
 export type IterCollection<T> = Iterable<T> | { [key: string]: T }
 export type KeyOfIter<T> = T extends Iterable<any> ? number : keyof T
 export type ValueOfIter<T> = T extends IterCollection<infer V> ? V : never
 
-export type ChildOf<T> = T extends (infer V)[] ? V : never
+// export type ChildOf<T> = T extends (infer V)[] ? V : never
+export type ChildOf<T extends any[]> = T[number]

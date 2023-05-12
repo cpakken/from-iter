@@ -1,4 +1,6 @@
 export type * from './types'
 export * from './IterBase'
-export * from './from-iter'
+export * from './toCollection'
+export * from './chains'
 export * from './reducers'
+export * from './from-iter'
