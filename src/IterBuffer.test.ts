@@ -23,6 +23,9 @@ describe('IterBuffer', () => {
 
     const list = fromIter([1, 2, 3, 4, 5, 6]).spy(spy1).buffer()
 
+    //buffer() does not call spy because it lazy caches
+    expect(spy1).toBeCalledTimes(0)
+
     list.forEach(spy2)
     list.forEach(spy3)
 
@@ -32,5 +35,25 @@ describe('IterBuffer', () => {
 
     expect(spy1.mock.calls).toEqual(spy2.mock.calls)
     expect(spy1.mock.calls).toEqual(spy3.mock.calls)
+  })
+
+  test('with buffer call values().next out of order', () => {
+    const spy1 = vi.fn()
+
+    const list = fromIter([1, 2, 3, 4, 5, 6]).spy(spy1).buffer()
+
+    const a = list.values()
+    const b = list.values()
+
+    a.next()
+    b.next()
+
+    a.next()
+    b.next()
+
+    a.next()
+    b.next()
+
+    expect(spy1).toBeCalledTimes(3)
   })
 })

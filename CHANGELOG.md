@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.10
+
+### Patch Changes
+
+- .buffer()
+
 ## 0.0.9
 
 ### Patch Changes

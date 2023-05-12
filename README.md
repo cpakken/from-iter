@@ -95,14 +95,28 @@ const map = iterList.toMap((value, key, index) => key + '!')
 // .to(<utilityReducer>())
 const grouped = iterList.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
+
+// Buffering
+// use buffers to lazily cache piped values. Does not run until terminal operation is called.
+
+const buffered = fromIter([1, 2, 3, 4, 5]).map((x) => x * 2).buffer()
+
+const list = buffered.toArray()
+const set = buffered.toSet()
+buffered.forEach((x) => console.log(x))
+const reduced = buffered.reduce((acc, x) => acc + x, 0)
+
+//buffer chain only called once per item
+
+
 ```
 Inspired by remeda, lodash, ramda, and other functional libraries.
 
 ## Roadmap
+- [x] .buffer()
 - [ ] Async Iterators `fromIterAsync()` 
 - [ ] `createPipe` / `fromIter(iterator).pipe(...)`
 - [ ] flatMap -> use `fromIter()` for child iterator items
-- [ ] .buffer()
 - [ ] Benchmarks
 - [ ] More tests
 - [ ] Common chain functions

@@ -25,8 +25,9 @@ export class Iter<T, KEY> {
     // return Object.assign(to, this)
   }
 
-  declare _bufferStore: (readonly [T, KEY])[];
-  *values(): Generator<T> {
+  declare _bufferStore: (readonly [T, KEY])[]
+
+  protected *_results(): Generator<readonly [T, KEY, number]> {
     const prevResultStore = createPrevResultStore<T, KEY>()
     const runChain = this._runChain.bind(this)
 
@@ -37,7 +38,7 @@ export class Iter<T, KEY> {
         for (const item of iterator) {
           const [state, result] = runChain(prevResultStore, item, key as KEY, index)
           if (state > 0) {
-            yield result!
+            yield [result!, key as KEY, index]
             index++
           } else if (state < 0) break
           key++
@@ -47,12 +48,16 @@ export class Iter<T, KEY> {
           const item = iterator[key]
           const [state, result] = runChain(prevResultStore, item, key as KEY, index)
           if (state > 0) {
-            yield result!
+            yield [result!, key as KEY, index]
             index++
           } else if (state < 0) break
         }
       }
     }
+  }
+
+  *values(): Generator<T> {
+    for (const [item] of this._results()) yield item
   }
 
   protected _runChain(
@@ -124,8 +129,8 @@ export class Iter<T, KEY> {
     return this._chain(chains)
   }
 
-  buffer() {
-    return new IterBuffer(this.map(bufferMapper))
+  buffer(): IterBuffer<T, KEY> {
+    return new IterBuffer(this._results())
   }
 
   // Terminal methods
@@ -134,7 +139,7 @@ export class Iter<T, KEY> {
   reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A
   reduce<A>(fn: (acc: A | undefined, val: T, key: KEY, index: number) => A, initial?: A): A | undefined {
     let acc = initial
-    for (const data of this.map(bufferMapper).values()) {
+    for (const data of this._results()) {
       acc = fn(acc, ...data)
     }
     return acc
@@ -211,4 +216,3 @@ export interface Iter<T, KEY> {
     g: CN<F, KEY, G>
   ): Iter<G, KEY>
 }
-const bufferMapper = <T, KEY>(value: T, key: KEY, index: number) => [value, key, index] as const
