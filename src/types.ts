@@ -61,3 +61,4 @@ export type ValueOfIter<T> = T extends IterCollection<infer V> ? V : never
 export type ChildOf<T extends any[]> = T[number]
 
 export type ObjectKey = string | number | symbol
+export type IterResult<T, KEY> = readonly [T, KEY, number]

@@ -1,4 +1,4 @@
-import { fromIter } from '..'
+import { fromIter, buffer } from '..'
 
 describe('IterBuffer', () => {
   test('without buffer', () => {
@@ -21,7 +21,7 @@ describe('IterBuffer', () => {
     const spy2 = vi.fn()
     const spy3 = vi.fn()
 
-    const list = fromIter([1, 2, 3, 4, 5, 6]).spy(spy1).buffer()
+    const list = buffer(fromIter([1, 2, 3, 4, 5, 6]).spy(spy1))
 
     //buffer() does not call spy because it lazy caches
     expect(spy1).toBeCalledTimes(0)
@@ -40,7 +40,7 @@ describe('IterBuffer', () => {
   test('with buffer call values().next out of order', () => {
     const spy1 = vi.fn()
 
-    const list = fromIter([1, 2, 3, 4, 5, 6]).spy(spy1).buffer()
+    const list = buffer(fromIter([1, 2, 3, 4, 5, 6]).spy(spy1))
 
     const a = list.values()
     const b = list.values()

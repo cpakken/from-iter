@@ -15,8 +15,8 @@ npm install from-iter
 ### Size
 | Package           | Size    | GZipped |
 | ----------------- | ------- | ------- |
-| iter() (lite)     | 1.5 KB  | 765 B   |
-| fromIter() (full) | 2.15 KB | 1 B     |
+| iter() (lite)     | 1.02 KB | 544 B   |
+| fromIter() (full) | 1.66 KB | 805 B   |
 
 Customize your treeshaking @ bundlejs.com 
 - https://bundlejs.com/?q=from-iter&bundle
@@ -116,8 +116,9 @@ const map = iterList.toMap((value, key, index) => key + '!')
 
 // Buffering
 // use buffers to lazily cache piped values. Does not run until terminal operation is called.
+import { fromIter, buffer } from 'from-iter'
 
-const buffered = fromIter([1, 2, 3, 4, 5]).map((x) => x * 2).buffer()
+const buffered = buffer(fromIter([1, 2, 3, 4, 5]).map((x) => x * 2))
 
 const list = buffered.toArray()
 const set = buffered.toSet()
@@ -129,10 +130,6 @@ const reduced = buffered.reduce((acc, x) => acc + x, 0)
 
 ```
 ## IterLite
-
-Implemented 
-DOCS INCOMPLETE TODO 
-
 LITE: 1.5KB (765B gzipped)
   pipe - import chain methods manually 
 
@@ -161,13 +158,13 @@ const { iter, map, filter, toArray, fromIter } from 'from-iter'
 
 const list = iter([1, 2, 3, 4, 5]) //lite
   .pipe(
-    map((x) => x * 2),
     filter((x) => x % 2 === 0)
+    map((x) => x * 2),
   )(toArray())
 
 const listFull = fromIter([1, 2, 3, 4, 5]) //full
-  .map((x) => x * 2)
   .filter((x) => x % 2 === 0)
+  .map((x) => x * 2)
   .toArray()
 
 ```

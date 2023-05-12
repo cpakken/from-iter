@@ -1,16 +1,4 @@
-import {
-  IterLite,
-  IterBuffer,
-  filter,
-  forEach,
-  map,
-  mapReduce,
-  take,
-  toArray,
-  toMap,
-  toObject,
-  toSet,
-} from '.'
+import { IterLite, filter, forEach, map, mapReduce, take, toArray, toMap, toObject, toSet } from '.'
 import {
   CN,
   MapKeyFn,
@@ -25,9 +13,6 @@ import {
 
 export class Iter<T, KEY> extends IterLite<T, KEY> {
   // Chainable methods
-  buffer(): IterBuffer<T, KEY> {
-    return new IterBuffer(this._results())
-  }
 
   map<R>(fn: T_MAP_CHAIN<T, KEY, R>[1]): Iter<R, KEY> {
     return this._chain([map(fn)])

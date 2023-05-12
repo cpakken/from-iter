@@ -12,19 +12,19 @@ export const toCollection = <T, K, A>(
 
 //List Collections
 
-const toArray_ = toCollection(
-  (): any[] => [],
-  (collection, val) => collection.push(val)
-)
+export const toArray = <T, K>(): Processor<T, K, T[]> => {
+  return toCollection(
+    (): any[] => [],
+    (collection, val) => collection.push(val)
+  )
+}
 
-export const toArray = <T, K>(): Processor<T, K, T[]> => toArray_
-
-const toSet_ = toCollection(
-  (): Set<any> => new Set(),
-  (collection, val) => collection.add(val)
-)
-
-export const toSet = <T, K>(): Processor<T, K, Set<T>> => toSet_
+export const toSet = <T, K>(): Processor<T, K, Set<T>> => {
+  return toCollection(
+    (): Set<any> => new Set(),
+    (collection, val) => collection.add(val)
+  )
+}
 
 // Keyed Collections
 

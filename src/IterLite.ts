@@ -1,4 +1,4 @@
-import { IterLiteBuffer, createPrevResultStore, isForOf } from '.'
+import { createPrevResultStore, isForOf } from '.'
 import {
   CN,
   C_FILTER,
@@ -6,6 +6,7 @@ import {
   C_MAP_REDUCE,
   C_STOP,
   IterCollection,
+  IterResult,
   PipeState,
   PrevResultStore,
   Processor,
@@ -15,8 +16,12 @@ export class IterLite<T, KEY> {
   constructor(
     private _iterators: IterCollection<T>[],
     private _chains: readonly CN[] = [],
-    private _klass_chain?: typeof IterLite
+    createBufferResults?: () => () => Generator<IterResult<T, KEY>>
   ) {
+    if (createBufferResults) {
+      this._results = createBufferResults.call(this)
+    }
+
     const callable = this._process.bind(this)
 
     //@ts-ignore
@@ -24,7 +29,7 @@ export class IterLite<T, KEY> {
     return Object.assign(callable, this)
   }
 
-  protected *_results(): Generator<readonly [T, KEY, number]> {
+  protected *_results(): Generator<IterResult<T, KEY>> {
     const prevResultStore = createPrevResultStore<T, KEY>()
     const runChain = this._runChain.bind(this)
 
@@ -94,17 +99,15 @@ export class IterLite<T, KEY> {
   protected _chain(chains: readonly CN[] = [], priorityChains: readonly CN[] = []) {
     if (!(chains.length || priorityChains)) return this
 
-    const Klass = this._klass_chain || (this.constructor as typeof IterLite)
+    // const Klass = this._klass_chain || (this.constructor as typeof IterLite)
+    const Klass = this.constructor as typeof IterLite
+
     return new Klass(this._iterators, [...priorityChains, ...this._chains, ...chains]) as any
   }
 
   // Chainable methods
   pipe(...chains: CN[]): any {
     return this._chain(chains)
-  }
-
-  buffer(): IterLiteBuffer<T, KEY> {
-    return new IterLiteBuffer(this._results())
   }
 
   // Terminal methods
