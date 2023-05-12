@@ -87,18 +87,18 @@ describe('kitchen sink', () => {
 
   const mapResults = vi.fn((value: number, key: number, index: number) => ({ value, key, index }))
 
-  const forEach1 = vi.fn()
-  const forEach2 = vi.fn()
-  const forEach3 = vi.fn()
+  const spy1 = vi.fn()
+  const spy2 = vi.fn()
+  const spy3 = vi.fn()
 
   const a = fromIter(Array.from({ length: 20 }))
     .map(mapKeys)
-    .forEach(forEach1)
+    .spy(spy1)
     .mapReduce(addPrev, 0)
     .filter(filterEven)
-    .forEach(forEach2)
+    .spy(spy2)
     .take(takeWhile)
-    .forEach(forEach3)
+    .spy(spy3)
     .map(mapResults)
 
   beforeEach(() => {
@@ -113,9 +113,9 @@ describe('kitchen sink', () => {
     expect(getMockResults(addPrev)).toMatchSnapshot()
     expect(getMockResults(filterEven)).toMatchSnapshot()
 
-    expect(forEach1).toBeCalledTimes(16)
-    expect(forEach2).toBeCalledTimes(8)
-    expect(forEach3).toBeCalledTimes(7)
+    expect(spy1).toBeCalledTimes(16)
+    expect(spy2).toBeCalledTimes(8)
+    expect(spy3).toBeCalledTimes(7)
   })
 
   test('reduce', () => {

@@ -68,6 +68,7 @@ const chainFn = (value: Value, key: Key, index: Index) => Result
 const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   .map((value, key, index) => value * 2)
   .filter((value, key, index) => value % 2 === 0)
+  .spy((value, key, index) => console.log(value, key, index)) //like forEach() but within the chain
   .mapReduce((prev, value, key, index) => prev + value, initialValue)
   .take((value, key, index) => value > 10) 
 //  .flatMap((value, key, index) => [value, value * 2]) TODO
@@ -75,22 +76,24 @@ const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 //** Terminal operations **//
 
-const reduced = iter.reduce((acc, value) => acc + value, 0)
+iterList.forEach((value, key, index) => console.log(value, key, index))
+
+const reduced = iterList.reduce((acc, value, key, index) => acc + value, 0)
 
 //to Collection
 
-const array = iter.toArray()
-const object = iter.toObject()
-const set = iter.toSet()
-const map = iter.toMap()
-const iterator = iter.values()
+const array = iterList.toArray()
+const object = iterList.toObject()
+const set = iterList.toSet()
+const map = iterList.toMap()
+const iterator = iterList.values()
 
 //Keyed Collection has an optional key mapper
-const object = iter.toObject((value, key, index) => key + '!')
-const map = iter.toMap((value, key, index) => key + '!')
+const object = iterList.toObject((value, key, index) => key + '!')
+const map = iterList.toMap((value, key, index) => key + '!')
 
 // .to(<utilityReducer>())
-const grouped = iter.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
+const grouped = iterList.to(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
 ```
 Inspired by remeda, lodash, ramda, and other functional libraries.
@@ -99,6 +102,7 @@ Inspired by remeda, lodash, ramda, and other functional libraries.
 - [ ] Async Iterators `fromIterAsync()` 
 - [ ] `createPipe` / `fromIter(iterator).pipe(...)`
 - [ ] flatMap -> use `fromIter()` for child iterator items
+- [ ] .buffer()
 - [ ] Benchmarks
 - [ ] More tests
 - [ ] Common chain functions

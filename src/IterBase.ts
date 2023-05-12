@@ -1,4 +1,4 @@
-import { filter, forEach, map, mapReduce, take, toArray, toMap, toObject, toSet } from '.'
+import { IterBuffer, filter, forEach, map, mapReduce, take, toArray, toMap, toObject, toSet } from '.'
 import {
   CN,
   C_FILTER,
@@ -6,7 +6,6 @@ import {
   C_MAP_REDUCE,
   C_STOP,
   IterCollection,
-  IterateCallback,
   MapKeyFn,
   PipeState,
   PrevResultStore,
@@ -17,8 +16,8 @@ import {
   T_STOP_CHAIN,
 } from './types'
 
-export class IterBase<T, KEY> {
-  constructor(private _iterators: IterCollection<T>[], private _chains: CN[] = []) {
+export class Iter<T, KEY> {
+  constructor(private _iterators: IterCollection<T>[], private _chains: readonly CN[] = []) {
     //Make instance callable?
     // const to = this.to.bind(this)
     // //@ts-ignore
@@ -26,47 +25,17 @@ export class IterBase<T, KEY> {
     // return Object.assign(to, this)
   }
 
-  private _iterate(callback: IterateCallback<T, KEY>) {
-    let index = 0
-
-    const prevResultStore = createPrevResultStore<T, KEY>()
-    const pipeItem = this._pipeItem.bind(this)
-
-    for (const iterator of this._iterators) {
-      if (isForOf(iterator)) {
-        let key = 0
-        for (const item of iterator) {
-          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
-          if (state > 0) {
-            callback(result!, key as KEY, index)
-            index++
-          } else if (state < 0) break
-          key++
-        }
-      } else {
-        for (const key in iterator) {
-          const item = iterator[key]
-          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
-          if (state > 0) {
-            callback(result!, key as KEY, index)
-            index++
-          } else if (state < 0) break
-        }
-      }
-    }
-  }
-
+  declare _bufferStore: (readonly [T, KEY])[];
   *values(): Generator<T> {
-    let index = 0
-
     const prevResultStore = createPrevResultStore<T, KEY>()
-    const pipeItem = this._pipeItem.bind(this)
+    const runChain = this._runChain.bind(this)
 
+    let index = 0
     for (const iterator of this._iterators) {
       if (isForOf(iterator)) {
         let key = 0
         for (const item of iterator) {
-          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
+          const [state, result] = runChain(prevResultStore, item, key as KEY, index)
           if (state > 0) {
             yield result!
             index++
@@ -76,7 +45,7 @@ export class IterBase<T, KEY> {
       } else {
         for (const key in iterator) {
           const item = iterator[key]
-          const [state, result] = pipeItem(prevResultStore, item, key as KEY, index)
+          const [state, result] = runChain(prevResultStore, item, key as KEY, index)
           if (state > 0) {
             yield result!
             index++
@@ -86,15 +55,13 @@ export class IterBase<T, KEY> {
     }
   }
 
-  private _pipeItem(
+  protected _runChain(
     prevResultStore: PrevResultStore<T, KEY>,
     item: T,
     key: KEY,
     index: number
   ): [PipeState, T?] {
-    // 1 = continue, 0 = skip, -1 = stop
-    let state: PipeState = 1
-
+    let state: PipeState = 1 // 1 = continue, 0 = skip, -1 = stop
     let result = item
 
     for (const [type, fn, init] of this._chains) {
@@ -126,35 +93,39 @@ export class IterBase<T, KEY> {
     return [state]
   }
 
-  private _chain(...chains: CN[]) {
-    // @ts-ignore
-    return new this.constructor(this._iterators, [...this._chains, ...chains]) as any
+  protected _chain(chains: readonly CN[]) {
+    return new Iter(this._iterators, [...this._chains, ...chains]) as any
   }
 
   // Chainable methods
 
-  map<R>(fn: T_MAP_CHAIN<T, KEY, R>[1]): IterBase<R, KEY> {
-    return this._chain(map(fn))
+  map<R>(fn: T_MAP_CHAIN<T, KEY, R>[1]): Iter<R, KEY> {
+    return this._chain([map(fn)])
   }
 
-  forEach(fn: (val: T, key: KEY, index: number) => void): this {
-    return this._chain(forEach(fn))
+  //like forEach but in chain
+  spy(fn: (val: T, key: KEY, index: number) => void): this {
+    return this._chain([forEach(fn)])
   }
 
-  mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): IterBase<A, KEY> {
-    return this._chain(mapReduce(fn, initial))
+  mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): Iter<A, KEY> {
+    return this._chain([mapReduce(fn, initial)])
   }
 
   filter(fn: T_FILTER_CHAIN<T, KEY>[1]): this {
-    return this._chain(filter(fn))
+    return this._chain([filter(fn)])
   }
 
   take(fnOrNum: number | T_STOP_CHAIN<T, KEY>[1]): this {
-    return this._chain(take(fnOrNum))
+    return this._chain([take(fnOrNum)])
   }
 
   pipe(...chains: CN[]): any {
-    return this._chain(...chains)
+    return this._chain(chains)
+  }
+
+  buffer() {
+    return new IterBuffer(this.map(bufferMapper))
   }
 
   // Terminal methods
@@ -163,10 +134,14 @@ export class IterBase<T, KEY> {
   reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A
   reduce<A>(fn: (acc: A | undefined, val: T, key: KEY, index: number) => A, initial?: A): A | undefined {
     let acc = initial
-    this._iterate((result, key, index) => {
-      acc = fn(acc, result, key, index)
-    })
+    for (const data of this.map(bufferMapper).values()) {
+      acc = fn(acc, ...data)
+    }
     return acc
+  }
+
+  forEach(fn: (val: T, key: KEY, index: number) => void): void {
+    this.reduce((_, val, key, index) => fn(val, key, index))
   }
 
   // use combination of pipe chain and reducer
@@ -176,7 +151,7 @@ export class IterBase<T, KEY> {
    */
   // to<A>([chains, [initial, fn]]: [CN[] | null, Processor<T, KEY, A>]): A {
   to<A>([chains, [initial, fn]]: Processor<T, KEY, A>): A {
-    return (chains ? this._chain(...chains) : this).reduce(fn, initial)
+    return (chains ? this._chain(chains) : this).reduce(fn, initial)
   }
 
   toArray(): Array<T> {
@@ -202,22 +177,22 @@ export class IterBase<T, KEY> {
   }
 }
 
-const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
+export const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
 
 const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
 
-export interface IterBase<T, KEY> {
-  pipe<A>(a: CN<T, KEY, A>): IterBase<A, KEY>
-  pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterBase<B, KEY>
-  pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): IterBase<C, KEY>
-  pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): IterBase<D, KEY>
+export interface Iter<T, KEY> {
+  pipe<A>(a: CN<T, KEY, A>): Iter<A, KEY>
+  pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): Iter<B, KEY>
+  pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): Iter<C, KEY>
+  pipe<A, B, C, D>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>, d: CN<C, KEY, D>): Iter<D, KEY>
   pipe<A, B, C, D, E>(
     a: CN<T, KEY, A>,
     b: CN<A, KEY, B>,
     c: CN<B, KEY, C>,
     d: CN<C, KEY, D>,
     e: CN<D, KEY, E>
-  ): IterBase<E, KEY>
+  ): Iter<E, KEY>
   pipe<A, B, C, D, E, F>(
     a: CN<T, KEY, A>,
     b: CN<A, KEY, B>,
@@ -225,7 +200,7 @@ export interface IterBase<T, KEY> {
     d: CN<C, KEY, D>,
     e: CN<D, KEY, E>,
     f: CN<E, KEY, F>
-  ): IterBase<F, KEY>
+  ): Iter<F, KEY>
   pipe<A, B, C, D, E, F, G>(
     a: CN<T, KEY, A>,
     b: CN<A, KEY, B>,
@@ -234,5 +209,6 @@ export interface IterBase<T, KEY> {
     e: CN<D, KEY, E>,
     f: CN<E, KEY, F>,
     g: CN<F, KEY, G>
-  ): IterBase<G, KEY>
+  ): Iter<G, KEY>
 }
+const bufferMapper = <T, KEY>(value: T, key: KEY, index: number) => [value, key, index] as const
