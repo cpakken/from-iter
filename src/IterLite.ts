@@ -1,3 +1,4 @@
+import { flatmap, map } from './internal'
 import {
   CN,
   C_FILTER,
@@ -8,12 +9,14 @@ import {
   ChainResult,
   IterCollection,
   IterResult,
+  KeyOfIter,
   PipeState,
   PrevResultStore,
   Processor,
+  ValueOfIter,
 } from './types'
 
-export const IteratorSymbol: SymbolConstructor['iterator'] = Symbol.iterator
+export const IteratorSymbol: typeof Symbol.iterator = Symbol.iterator
 
 export class IterLite<T, KEY> {
   constructor(
@@ -46,8 +49,7 @@ export class IterLite<T, KEY> {
             if (state === 1) yield [result!, key as KEY, index]
             else {
               //TODO FLatten TEST THIS
-              for (const [v, k] of result as IterLite<T, any>) {
-                // yield [v, k, index]
+              for (const [v] of result as IterLite<T, any>) {
                 yield [v, key as KEY, index]
                 index++
               }
@@ -78,7 +80,7 @@ export class IterLite<T, KEY> {
     key: KEY,
     index: number
   ): ChainResult<T> {
-    let state: PipeState = 1 // -1 = stop, 0 = skip, 1 = continue,
+    let state: PipeState = 1 // -1 = stop, 0 = skip, 1 = continue, 2 = flatten
     let result = item
     const chains = this._chains
     const { length } = chains
@@ -109,14 +111,22 @@ export class IterLite<T, KEY> {
           state = fn(result, key, index) ? 1 : -1
           break
         case C_FLATMAP: {
-          //fn is level of flatmap
-          if (fn && isValidIter(result)) {
-            const nextLevel = fn - 1
-            const CN = chains.slice(i + 1)
-            if (nextLevel) CN.unshift([C_FLATMAP, nextLevel])
-            return [2, new IterLite([result], CN)]
+          const level = chain[2]
+          if (level && isValidIter(result)) {
+            const nextLevel = level - 1
+            const CN = chains.slice(i)
+
+            //level > 1 - lower level
+            if (nextLevel) CN[0] = flatmap(fn, nextLevel)
+            //level === 1 - stopping condition, use regular map
+            else CN[0] = map((inner: [ValueOfIter<T>, KeyOfIter<T>, number]) => fn(inner, key, index))
+
+            //recurse into collection to unwrap
+            return [2, new IterLite<ValueOfIter<T>, KeyOfIter<T>>([result], CN)]
           }
-          break //return normal result
+          //level === 0
+          result = fn([result], key, index)
+          break
         }
       }
       if (state < 1) return [state]

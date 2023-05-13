@@ -1,4 +1,4 @@
-import { CN, Iter, IterLite } from '.'
+import { CN, Iter, IterLite } from './internal'
 
 export const createPipe: PipeCreator = (...chains: CN[]) => {
   return (iter: IterLite<any, any>) => {

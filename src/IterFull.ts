@@ -1,4 +1,4 @@
-import { IterLite, filter, forEach, map, mapReduce, take, toArray, toMap, toObject, toSet } from '.'
+import { IterLite, filter, spy, map, mapReduce, take, toArray, toMap, toObject, toSet } from './internal'
 import {
   CN,
   MapKeyFn,
@@ -19,7 +19,7 @@ export class Iter<T, KEY> extends IterLite<T, KEY> {
 
   //like forEach but in chain
   spy(fn: (val: T, key: KEY, index: number) => void): this {
-    return this._chain([forEach(fn)])
+    return this._chain([spy(fn)])
   }
 
   mapReduce<A>(fn: T_MAP_REDUCE_CHAIN<T, KEY, A>[1], initial?: A): Iter<A, KEY> {

@@ -1,4 +1,4 @@
-import { IterLite, IterResult, IteratorSymbol, createPrevResultStore } from '.'
+import { IterLite, IterResult, IteratorSymbol, createPrevResultStore } from './internal'
 
 const bufferResultsFactory = <T, KEY>(bufferIter: IterLite<T, KEY>) => {
   const bufferedResults = bufferIter[IteratorSymbol]()

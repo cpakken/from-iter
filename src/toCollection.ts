@@ -1,4 +1,4 @@
-import { MapKeyFn, ObjectKey, Processor, Store } from '.'
+import { MapKeyFn, ObjectKey, Processor, Store } from './internal'
 
 export const toCollection = <T, K, A>(
   create: () => A,

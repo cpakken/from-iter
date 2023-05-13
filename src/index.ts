@@ -1,9 +1,26 @@
-export type * from './types'
-export * from './IterLite'
-export * from './IterFull'
-export * from './buffer'
-export * from './toCollection'
-export * from './chains'
-export * from './reducers'
-export * from './from-iter'
-export * from './create-pipe'
+export {
+  fromIter, //full
+  iter, //lite
+  buffer,
+  createPipe,
+
+  //chains
+  filter,
+  map,
+  flatmap,
+  mapReduce,
+  take,
+  spy,
+
+  //Reducers
+  groupBy,
+  pickBy,
+  find,
+
+  //to collections
+  toArray,
+  toSet,
+  toObject,
+  toMap,
+  toCollection, //util
+} from './internal'

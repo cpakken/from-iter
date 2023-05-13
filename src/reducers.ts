@@ -1,4 +1,4 @@
-import { ObjectKey, Processor, filter, take } from '.'
+import { ObjectKey, Processor, filter, take } from './internal'
 
 export type MapFn<T, K, R> = (val: T, key: K, index: number) => R
 export type Store<K extends ObjectKey, V> = { [key in K]: V }
