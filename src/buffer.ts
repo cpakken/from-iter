@@ -1,8 +1,7 @@
-import { IterLite, IterResult, createPrevResultStore } from '.'
+import { IterLite, IterResult, IteratorSymbol, createPrevResultStore } from '.'
 
 const bufferResultsFactory = <T, KEY>(bufferIter: IterLite<T, KEY>) => {
-  //@ts-ignore
-  const bufferedResults = bufferIter._results()
+  const bufferedResults = bufferIter[IteratorSymbol]()
 
   return function (this: IterLite<T, KEY>) {
     const cache: IterResult<T, KEY>[] = []
@@ -36,7 +35,10 @@ const bufferResultsFactory = <T, KEY>(bufferIter: IterLite<T, KEY>) => {
       for (const [item, key, index] of isDone ? cache : bufferGenerator()) {
         const [state, result] = runChain(prevResultStore, item, key, index)
         if (state > 0) {
-          yield [result!, key, index]
+          if (state === 1) yield [result!, key, index]
+          else {
+            //TODO state is FLATTEN, yield from flatmap iterator
+          }
         } else if (state < 0) break
       }
     }

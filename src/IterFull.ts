@@ -3,7 +3,6 @@ import {
   CN,
   MapKeyFn,
   ObjectKey,
-  PrevResultStore,
   Processor,
   T_FILTER_CHAIN,
   T_MAP_CHAIN,
@@ -65,10 +64,6 @@ export class Iter<T, KEY> extends IterLite<T, KEY> {
     return this(toMap(keyMapFn))
   }
 }
-
-export const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
-
-export const isForOf = <T>(val: any): val is Iterable<T> => val[Symbol.iterator]
 
 export interface Iter<T, KEY> {
   <A>(processor: Processor<T, KEY, A>): A

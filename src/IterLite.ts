@@ -1,16 +1,19 @@
-import { createPrevResultStore, isForOf } from '.'
 import {
   CN,
   C_FILTER,
+  C_FLATMAP,
   C_MAP,
   C_MAP_REDUCE,
   C_STOP,
+  ChainResult,
   IterCollection,
   IterResult,
   PipeState,
   PrevResultStore,
   Processor,
 } from './types'
+
+export const IteratorSymbol: SymbolConstructor['iterator'] = Symbol.iterator
 
 export class IterLite<T, KEY> {
   constructor(
@@ -19,7 +22,7 @@ export class IterLite<T, KEY> {
     createBufferResults?: () => () => Generator<IterResult<T, KEY>>
   ) {
     if (createBufferResults) {
-      this._results = createBufferResults.call(this)
+      this[IteratorSymbol] = createBufferResults.call(this)
     }
 
     const callable = this._process.bind(this)
@@ -29,7 +32,7 @@ export class IterLite<T, KEY> {
     return Object.assign(callable, this)
   }
 
-  protected *_results(): Generator<IterResult<T, KEY>> {
+  *[IteratorSymbol](): Generator<IterResult<T, KEY>> {
     const prevResultStore = createPrevResultStore<T, KEY>()
     const runChain = this._runChain.bind(this)
 
@@ -39,9 +42,16 @@ export class IterLite<T, KEY> {
         let key = 0
         for (const item of iterator) {
           const [state, result] = runChain(prevResultStore, item, key as KEY, index)
-          //TODO if state is flatmap state, yield from flatmap iterator
           if (state > 0) {
-            yield [result!, key as KEY, index]
+            if (state === 1) yield [result!, key as KEY, index]
+            else {
+              //TODO FLatten TEST THIS
+              for (const [v, k] of result as IterLite<T, any>) {
+                // yield [v, k, index]
+                yield [v, key as KEY, index]
+                index++
+              }
+            }
             index++
           } else if (state < 0) return
           key++
@@ -51,7 +61,10 @@ export class IterLite<T, KEY> {
           const item = iterator[key]
           const [state, result] = runChain(prevResultStore, item, key as KEY, index)
           if (state > 0) {
-            yield [result!, key as KEY, index]
+            if (state === 1) yield [result!, key as KEY, index]
+            else {
+              //TODO state is FLATTEN, yield from flatmap iterator
+            }
             index++
           } else if (state < 0) return
         }
@@ -64,11 +77,16 @@ export class IterLite<T, KEY> {
     item: T,
     key: KEY,
     index: number
-  ): [PipeState, T?] {
-    let state: PipeState = 1 // 1 = continue, 0 = skip, -1 = stop
+  ): ChainResult<T> {
+    let state: PipeState = 1 // -1 = stop, 0 = skip, 1 = continue,
     let result = item
+    const chains = this._chains
+    const { length } = chains
 
-    for (const [type, fn, init] of this._chains) {
+    for (let i = 0; i < length; i++) {
+      const chain = chains[i]
+      const [type, fn] = chain
+
       switch (type) {
         case C_MAP:
           result = fn(result, key, index)
@@ -77,6 +95,7 @@ export class IterLite<T, KEY> {
           if (!fn(result, key, index)) state = 0
           break
         case C_MAP_REDUCE: {
+          const init = chain[2]
           const prev = prevResultStore.has(fn)
             ? prevResultStore.get(fn)
             : (prevResultStore.set(fn, init), init)
@@ -86,10 +105,19 @@ export class IterLite<T, KEY> {
           prevResultStore.set(fn, result)
           break
         }
-        case C_STOP: {
+        case C_STOP:
           state = fn(result, key, index) ? 1 : -1
+          break
+        case C_FLATMAP: {
+          //fn is level of flatmap
+          if (fn && isValidIter(result)) {
+            const nextLevel = fn - 1
+            const CN = chains.slice(i + 1)
+            if (nextLevel) CN.unshift([C_FLATMAP, nextLevel])
+            return [2, new IterLite([result], CN)]
+          }
+          break //return normal result
         }
-        //TODO case if C_FLATMAP - return iterator with special state flag
       }
       if (state < 1) return [state]
     }
@@ -101,7 +129,6 @@ export class IterLite<T, KEY> {
   protected _chain(chains: readonly CN[] = [], priorityChains: readonly CN[] = []) {
     if (!(chains.length || priorityChains)) return this
 
-    // const Klass = this._klass_chain || (this.constructor as typeof IterLite)
     const Klass = this.constructor as typeof IterLite
 
     return new Klass(this._iterators, [...priorityChains, ...this._chains, ...chains]) as any
@@ -117,7 +144,7 @@ export class IterLite<T, KEY> {
   reduce<A>(fn: (acc: A, val: T, key: KEY, index: number) => A, initial: A): A
   reduce<A>(fn: (acc: A | undefined, val: T, key: KEY, index: number) => A, initial?: A): A | undefined {
     let acc = initial
-    for (const data of this._results()) {
+    for (const data of this) {
       acc = fn(acc, ...data)
     }
     return acc
@@ -133,7 +160,7 @@ export class IterLite<T, KEY> {
   }
 
   *values(): Generator<T> {
-    for (const [item] of this._results()) yield item
+    for (const [item] of this) yield item
   }
 }
 
@@ -179,3 +206,12 @@ export interface IterLite<T, KEY> {
     h: CN<G, KEY, H>
   ): IterLite<H, KEY>
 }
+
+export const isValidIter = (thing: any): thing is Iterable<any> => {
+  // return thing && typeof thing === 'object' && IteratorSymbol in thing
+  return thing && typeof thing === 'object'
+}
+
+export const createPrevResultStore = <T, KEY>() => new WeakMap() as PrevResultStore<T, KEY>
+
+export const isForOf = <T>(val: any): val is Iterable<T> => val[IteratorSymbol]
