@@ -18,11 +18,10 @@ npm install from-iter
 | iter() (lite)     | 1.02 KB | 544 B   |
 | fromIter() (full) | 1.66 KB | 805 B   |
 
-Customize your treeshaking @ bundlejs.com 
+Test treeshaking size @ bundlejs.com 
 - https://bundlejs.com/?q=from-iter&bundle
 
 ---
-
 
 ## Quick Start
 
@@ -199,4 +198,4 @@ Inspired by remeda, lodash, ramda, and other functional libraries.
 - [ ] Benchmarks
 - [ ] More tests
 - [ ] Common chain functions
-  - [ ] take, groupBy, takeWhile, drop, dropWhile, dropLast, dropLastWhile, skip, skipWhile, skipLast, skipLastWhile, skipRepeats, skipRepeatsWith, skipRepeatsBy, skipRepeatsWithKey, skipRepeatsBykey, skipWhileWith, skipWhileWithKey, 
+  - [ ] take, groupBy, takeWhile, drop, dropWhile, dropLast, dropLastWhile 

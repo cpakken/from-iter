@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.12
+
+### Patch Changes
+
+- createPipe() and iter object itself is iterable
+
 ## 0.0.11
 
 ### Patch Changes

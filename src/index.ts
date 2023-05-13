@@ -1,6 +1,9 @@
 export {
+  //Iter
   fromIter, //full
   iter, //lite
+
+  //utils
   buffer,
   createPipe,
 
@@ -16,11 +19,12 @@ export {
   groupBy,
   pickBy,
   find,
+  forEach,
 
   //to collections
+  toCollection, //util
   toArray,
   toSet,
   toObject,
   toMap,
-  toCollection, //util
 } from './internal'

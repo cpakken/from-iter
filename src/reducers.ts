@@ -29,3 +29,7 @@ export const find = <T, K>(fn: MapFn<T, K, any>): Processor<T, K, T | undefined>
   // return [[(_prev, val) => val], [take(1), filter(fn)]]
   return [[(_prev, val) => val], [filter(fn)], [take(1)]]
 }
+
+export const forEach = <T, K>(fn: MapFn<T, K, any>): Processor<T, K, void> => {
+  return [[(_prev, val, key, index) => fn(val, key, index)]]
+}
