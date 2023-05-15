@@ -71,10 +71,19 @@ export type ChainResult<T> =
 
 //Utility types
 export type IterCollection<T> = Iterable<T> | { [key: string]: T }
-export type KeyOfIter<T> = T extends Iterable<any> ? number : keyof T
+
+// export type KeyOfIter<T> = T extends Iterable<any> ? number : keyof T
+
+//Since keyof {[key: string]: any} is string | number, we need to exclude number
+export type KeyOfIter<T> = T extends Iterable<any>
+  ? number
+  : T extends { [key: string]: any }
+  ? keyof T & string
+  : never
+
 export type ValueOfIter<T> = T extends IterCollection<infer V> ? V : never
 
-export type ChildOrArray<T extends any[]> = T[number]
+export type ChildOfArray<T extends any[]> = T[number]
 
 export type ObjectKey = string | number | symbol
 export type IterResult<T, KEY> = readonly [T, KEY, number]

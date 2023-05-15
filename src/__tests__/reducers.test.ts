@@ -1,5 +1,4 @@
-import { find, fromIter, groupBy } from '..'
-import { pathOr, pick, sum } from '../reducers'
+import { find, fromIter, groupBy, sum } from '..'
 
 describe('utility reducers', () => {
   const numbers = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -21,38 +20,5 @@ describe('utility reducers', () => {
   test('sum', () => {
     const total = numbers(sum())
     expect(total).toBe(55)
-  })
-
-  test('pathOr', () => {
-    const obj = {
-      a: {
-        b: {
-          c: 1,
-        },
-      },
-    }
-
-    const a = fromIter([obj])(pathOr(['a']))
-    expect(a).toEqual({ b: { c: 1 } })
-
-    const ab = fromIter([obj])(pathOr(['a', 'b']))
-    expect(ab).toEqual({ c: 1 })
-
-    const abc = fromIter([obj])(pathOr(['a', 'b', 'c']))
-    expect(abc).toBe(1)
-
-    const abcd = fromIter([obj])(pathOr(['a', 'b', 'c', 'd'], 2))
-    expect(abcd).toBe(2)
-  })
-
-  test('pick', () => {
-    const obj = {
-      a: 1,
-      b: 2,
-      c: 3,
-    }
-
-    const picked = fromIter([obj])(pick('a', 'c'))
-    expect(picked).toEqual({ a: 1, c: 3 })
   })
 })

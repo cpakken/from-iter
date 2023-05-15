@@ -28,7 +28,13 @@ export const toSet = <T, K>(): Processor<T, K, Set<T>> => {
 
 // Keyed Collections
 
-export const toObject = <T, K, K_ extends ObjectKey>(
+type TToObject = {
+  <T, K>(): Processor<T, K, { [key in K & ObjectKey]: T }>
+  <T, K, K_ extends ObjectKey>(key: MapKeyFn<T, K, K_>): Processor<T, K, { [key in K_]: T }>
+  <T, K, K_ extends ObjectKey>(key?: MapKeyFn<T, K, K_>): Processor<T, K, { [key in ObjectKey]: T }>
+}
+
+export const toObject: TToObject = <T, K, K_ extends ObjectKey>(
   key?: MapKeyFn<T, K, K_>
 ): Processor<T, K, Store<ObjectKey, T>> => {
   const setter = key
@@ -40,7 +46,13 @@ export const toObject = <T, K, K_ extends ObjectKey>(
   return toCollection(() => ({} as Store<K, T>), setter)
 }
 
-export const toMap = <T, K, K_>(key?: MapKeyFn<T, K, K_>): Processor<T, K, Map<any, T>> => {
+type TToMap = {
+  <T, K>(): Processor<T, K, Map<K, T>>
+  <T, K, K_>(key: MapKeyFn<T, K, K_>): Processor<T, K, Map<K_, T>>
+  <T, K, K_>(key?: MapKeyFn<T, K, K_>): Processor<T, K, Map<any, T>>
+}
+
+export const toMap: TToMap = <T, K, K_>(key?: MapKeyFn<T, K, K_>): Processor<T, K, Map<any, T>> => {
   const setter = key
     ? (collection: Map<K_, any>, val: T, k: K, i: number) => collection.set(key(val, k, i), val)
     : (collection: Map<K, any>, val: T, k: K) => collection.set(k, val)

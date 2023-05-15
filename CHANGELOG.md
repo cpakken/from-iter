@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.14
+
+### Patch Changes
+
+- Fixed Types.
+
 ## 0.0.13
 
 ### Patch Changes

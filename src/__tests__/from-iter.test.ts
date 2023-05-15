@@ -1,5 +1,5 @@
 import { Mock } from 'vitest'
-import { fromIter } from '..'
+import { fromIter, iter, path, toObject } from '..'
 
 const getMockResults = (mock: Mock) => mock.mock.results.map((r) => r.value)
 
@@ -174,6 +174,20 @@ describe('toCollection', () => {
         "9": 10,
       }
     `)
+  })
+
+  test('object to object', () => {
+    // const obj = { foo: { value: 3 }, baz: { value: 4 } } as { [key: string]: { value: number } }
+    const obj = { foo: { value: 3 }, baz: { value: 4 } }
+
+    const store = fromIter(obj)
+      .pipe(path(['value']))
+      .toObject()
+
+    const store2 = iter(obj)(path(['value']), toObject())
+
+    expect(store).toEqual({ foo: 3, baz: 4 })
+    expect(store2).toEqual({ foo: 3, baz: 4 })
   })
 
   test('map', () => {

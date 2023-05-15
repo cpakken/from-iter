@@ -1,4 +1,4 @@
-import { IterLite, filter, spy, map, mapReduce, take, toArray, toMap, toObject, toSet } from './internal'
+import { IterLite, filter, map, mapReduce, spy, take, toArray, toMap, toObject, toSet } from './internal'
 import {
   CN,
   MapKeyFn,
@@ -53,7 +53,6 @@ export class Iter<T, KEY> extends IterLite<T, KEY> {
   toObject(): { [key in KEY & ObjectKey]: T }
   toObject<K extends ObjectKey>(key?: MapKeyFn<T, KEY, K>): { [key in K]: T }
   toObject(keyMapFn?: MapKeyFn<T, KEY, ObjectKey>) {
-    // return this.to(toObject(keyMapFn))
     return this(toObject(keyMapFn))
   }
 
@@ -66,8 +65,6 @@ export class Iter<T, KEY> extends IterLite<T, KEY> {
 }
 
 export interface Iter<T, KEY> {
-  <A>(processor: Processor<T, KEY, A>): A
-
   pipe<A>(a: CN<T, KEY, A>): Iter<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): Iter<B, KEY>
   pipe<A, B, C>(a: CN<T, KEY, A>, b: CN<A, KEY, B>, c: CN<B, KEY, C>): Iter<C, KEY>

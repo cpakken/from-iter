@@ -14,12 +14,15 @@ export {
   mapReduce,
   take,
   spy,
+  path,
+  pick,
 
   //Reducers
   groupBy,
-  pickBy,
   find,
   forEach,
+  sum,
+  first,
 
   //to collections
   toCollection, //util

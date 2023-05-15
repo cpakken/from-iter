@@ -89,6 +89,7 @@ const iterListWillEarlyTerminate = iterList.take((value, key, index) => value < 
 
 
 //** Terminal operations **//
+const iterList = fromIter([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 iterList.forEach((value, key, index) => console.log(value, key, index))
 
@@ -98,6 +99,13 @@ const reduced = iterList.reduce((acc, value, key, index) => acc + value, 0)
 const grouped = iterList(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
 const found = iterList(find((x) => x === 5))
+
+//Last argument is reducer function, preceded with chains
+const filterThenGroupBy = iterList(
+  map((x) => x + 2), //chain
+  filter((x) => x > 5 === 0), //chain
+  groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')) //reducer
+)
 
 //to Collection
 
@@ -198,4 +206,4 @@ Inspired by remeda, lodash, ramda, and other functional libraries.
 - [ ] Benchmarks
 - [ ] More tests
 - [ ] Common chain functions
-  - [ ] take, groupBy, takeWhile, drop, dropWhile, dropLast, dropLastWhile 
+  - [x] path, pick, take, groupBy

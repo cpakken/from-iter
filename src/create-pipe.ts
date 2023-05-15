@@ -1,5 +1,6 @@
 import { CN, Iter, IterLite } from './internal'
 
+//TODO first argument chain[], second argument optional processor?
 export const createPipe: PipeCreator = (...chains: CN[]) => {
   return (iter: IterLite<any, any>) => {
     return iter.pipe(...chains)
