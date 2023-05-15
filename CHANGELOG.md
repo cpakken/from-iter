@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.13
+
+### Patch Changes
+
+- added sum, pathOr, pick, findKey
+
 ## 0.0.12
 
 ### Patch Changes

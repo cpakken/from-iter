@@ -78,3 +78,15 @@ export type ChildOrArray<T extends any[]> = T[number]
 
 export type ObjectKey = string | number | symbol
 export type IterResult<T, KEY> = readonly [T, KEY, number]
+
+export type AnyPath = readonly (string | number)[]
+
+export type TypeOfPath<T, PATH extends AnyPath, Default = never> = PATH extends readonly [infer K, ...infer R]
+  ? K extends keyof T
+    ? R extends readonly [string | number, ...AnyPath]
+      ? TypeOfPath<T[K], R, Default>
+      : T[K]
+    : Default
+  : Default
+
+export type Flatten<T> = T extends {} ? { [K in keyof T]: T[K] } : T
