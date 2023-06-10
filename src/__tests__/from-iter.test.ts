@@ -184,7 +184,7 @@ describe('toCollection', () => {
       .pipe(path(['value']))
       .toObject()
 
-    const store2 = iter(obj)(path(['value']), toObject())
+    const store2 = iter(obj).pipe(path(['value']))(toObject())
 
     expect(store).toEqual({ foo: 3, baz: 4 })
     expect(store2).toEqual({ foo: 3, baz: 4 })

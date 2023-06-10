@@ -1,5 +1,11 @@
 # from-iter
 
+## 0.0.15
+
+### Patch Changes
+
+- Fixed filter and stop chain types.
+
 ## 0.0.14
 
 ### Patch Changes

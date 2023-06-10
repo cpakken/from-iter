@@ -14,7 +14,7 @@ import {
   TypeOfPath,
 } from './types'
 
-export const filter = <T, K>(fn: T_FILTER_CHAIN<T, K>[1]): T_FILTER_CHAIN<T, K> => {
+export const filter = <T, K>(fn: T_FILTER_CHAIN<T, K, T>[1]): T_FILTER_CHAIN<T, K, T> => {
   return [C_FILTER, fn]
 }
 
@@ -36,7 +36,7 @@ export const mapReduce = <T, K, A>(
   return [C_MAP_REDUCE, fn, initial]
 }
 
-export const take = <T, K>(fnOrNum: number | T_STOP_CHAIN<T, K>[1]): T_STOP_CHAIN<T, K> => {
+export const take = <T, K>(fnOrNum: number | T_STOP_CHAIN<T, K, T>[1]): T_STOP_CHAIN<T, K, T> => {
   //@ts-ignore
   return [C_STOP, isNaN(fnOrNum) ? fnOrNum : (val, key, index) => index < fnOrNum]
 }

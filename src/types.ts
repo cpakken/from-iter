@@ -15,9 +15,11 @@ export type T_FLATMAP = typeof C_FLATMAP
 export type TCHAIN = T_FILTER | T_MAP | T_MAP_REDUCE | T_STOP | T_FLATMAP
 
 //Buffered
-export type T_FILTER_CHAIN<T, K> = readonly [T_FILTER, (val: T, key: K, index: number) => any]
+//@ts-expect-error
+export type T_FILTER_CHAIN<T, K, R = T> = readonly [T_FILTER, (val: T, key: K, index: number) => any]
 
-export type T_STOP_CHAIN<T, K> = readonly [T_STOP, (val: T, key: K, index: number) => any]
+//@ts-expect-error
+export type T_STOP_CHAIN<T, K, R = T> = readonly [T_STOP, (val: T, key: K, index: number) => any]
 
 //Mapped
 export type T_MAP_CHAIN<T, K, R = any> = readonly [T_MAP, (val: T, key: K, index: number) => R]
@@ -37,9 +39,14 @@ export type T_MAP_REDUCE_CHAIN<T, K, A = any> = readonly [
 export type CN<T = any, K = any, R = any> =
   | T_MAP_CHAIN<T, K, R>
   | T_MAP_REDUCE_CHAIN<T, K, R>
-  | T_FILTER_CHAIN<T, K>
-  | T_STOP_CHAIN<T, K>
+  | T_FILTER_CHAIN<T, K, R>
+  | T_STOP_CHAIN<T, K, R>
   | T_FLATMAP_CHAIN<T, K, R>
+// | T_FILTER_CHAIN<T, K>
+// | T_STOP_CHAIN<T, K>
+
+// type A = T_FILTER_CHAIN<number, number, number>
+// type B = A extends CN<infer T, infer K, infer R> ? [T, K, R] : never
 
 export type MapKeyFn<T, K, K_> = (val: T, key: K, index: number) => K_
 

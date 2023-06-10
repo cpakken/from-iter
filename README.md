@@ -100,12 +100,6 @@ const grouped = iterList(groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')))
 
 const found = iterList(find((x) => x === 5))
 
-//Last argument is reducer function, preceded with chains
-const filterThenGroupBy = iterList(
-  map((x) => x + 2), //chain
-  filter((x) => x > 5 === 0), //chain
-  groupBy((x) => (x % 2 === 0 ? 'even' : 'odd')) //reducer
-)
 
 //to Collection
 
@@ -192,7 +186,6 @@ const result2 = pipe(numbers2).tArray()
 
 
 ```
-
 
 
 Inspired by remeda, lodash, ramda, and other functional libraries.

@@ -161,14 +161,9 @@ export class IterLite<T, KEY> {
     return acc
   }
 
-  //can be called directly via Iter(...)(processor) or Iter(...)([chain], processor)
-  // private _process<A>(pipeOrProcessor: CN[] | Processor<T, KEY, A>, _processor?: Processor<T, KEY, A>): A {
-  private _process<A>(...args: any[]): A {
-    if (!args.length) throw new Error('No processor provided')
-
-    const [[fn, create], chains, priorityChains] = args.pop() as Processor<T, KEY, A>
-    const chainz = [...args, ...(chains || [])] as CN[]
-    return this._chain(chainz, priorityChains).reduce(fn, create?.())
+  private _process<A>(processor: Processor<T, KEY, A>): A {
+    const [[fn, create], chains, priorityChains] = processor
+    return this._chain(chains, priorityChains).reduce(fn, create?.())
   }
 
   *values(): Generator<T> {
@@ -178,43 +173,6 @@ export class IterLite<T, KEY> {
 
 export interface IterLite<T, KEY> {
   <A>(processor: Processor<T, KEY, A>): A
-  <A, B>(c1: CN<T, KEY, A>, processor: Processor<A, KEY, B>): B
-  <A, B, C>(c1: CN<T, KEY, A>, c2: CN<A, KEY, B>, processor: Processor<B, KEY, C>): C
-  <A, B, C, D>(c1: CN<T, KEY, A>, c2: CN<A, KEY, B>, c3: CN<B, KEY, C>, processor: Processor<C, KEY, D>): D
-  <A, B, C, D, E>(
-    c1: CN<T, KEY, A>,
-    c2: CN<A, KEY, B>,
-    c3: CN<B, KEY, C>,
-    c4: CN<C, KEY, D>,
-    processor: Processor<D, KEY, E>
-  ): E
-  <A, B, C, D, E, F>(
-    c1: CN<T, KEY, A>,
-    c2: CN<A, KEY, B>,
-    c3: CN<B, KEY, C>,
-    c4: CN<C, KEY, D>,
-    c5: CN<D, KEY, E>,
-    processor: Processor<E, KEY, F>
-  ): F
-  <A, B, C, D, E, F, G>(
-    c1: CN<T, KEY, A>,
-    c2: CN<A, KEY, B>,
-    c3: CN<B, KEY, C>,
-    c4: CN<C, KEY, D>,
-    c5: CN<D, KEY, E>,
-    c6: CN<E, KEY, F>,
-    processor: Processor<F, KEY, G>
-  ): G
-  <A, B, C, D, E, F, G, H>(
-    c1: CN<T, KEY, A>,
-    c2: CN<A, KEY, B>,
-    c3: CN<B, KEY, C>,
-    c4: CN<C, KEY, D>,
-    c5: CN<D, KEY, E>,
-    c6: CN<E, KEY, F>,
-    c7: CN<F, KEY, G>,
-    processor: Processor<G, KEY, H>
-  ): H
 
   pipe<A>(a: CN<T, KEY, A>): IterLite<A, KEY>
   pipe<A, B>(a: CN<T, KEY, A>, b: CN<A, KEY, B>): IterLite<B, KEY>
